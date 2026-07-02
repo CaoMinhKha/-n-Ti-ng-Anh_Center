@@ -11,7 +11,7 @@ class LessonDragMatchScreen extends StatefulWidget {
 
 class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
   bool _isLoadingRole = true;
-
+  String? _userRole;
   final List<String> _lessonTitles = [
     'Lesson 1A.0: Introduction',
     'Lesson 1A.1: Reading',
@@ -56,7 +56,7 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
   }
 
   final List<String> _answers = [
-    'was having',
+    'was having', 
     'took',
     'was watching',
     'hit',
