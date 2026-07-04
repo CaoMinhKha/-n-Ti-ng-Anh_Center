@@ -82,11 +82,16 @@ class _LoginScreenState
           final userId = int.tryParse(rawUserId.toString());
           if (userId != null) {
             await UserSession.saveUser(userId);
+            await UserSession.saveUserId(userId);
           }
         }
 
         if (userName != null) {
           await UserSession.saveUserName(userName.toString());
+        }
+
+        if (result['token'] != null) {
+          await UserSession.saveToken(result['token'].toString());
         }
 
         await UserSession.saveUserRole(role);

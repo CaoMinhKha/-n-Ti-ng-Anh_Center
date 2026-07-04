@@ -9,7 +9,7 @@ class TeacherClassListScreen extends StatefulWidget {
 }
 
 class _TeacherClassListScreenState extends State<TeacherClassListScreen> {
-  List classes = [];
+  List<dynamic> classes = [];
   bool loading = true;
 
   @override
@@ -19,6 +19,7 @@ class _TeacherClassListScreenState extends State<TeacherClassListScreen> {
   }
 
   Future<void> loadClasses() async {
+    setState(() => loading = true);
     final data = await ClassService.getClasses();
     if (mounted) {
       setState(() {
@@ -31,21 +32,41 @@ class _TeacherClassListScreenState extends State<TeacherClassListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Lớp giảng dạy')),
+      appBar: AppBar(
+        title: const Text('Lớp giảng dạy'),
+        backgroundColor: Colors.blue.shade700,
+      ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: classes.length,
-              itemBuilder: (context, index) {
-                final item = classes[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: ListTile(
-                    title: Text(item['TenLop'] ?? 'Lớp chưa tên'),
-                    subtitle: Text('Khóa: ${item['MaKhoaHoc'] ?? ''} - GV: ${item['MaGiaoVien'] ?? 'Chưa phân công'}'),
-                  ),
-                );
-              },
+          : RefreshIndicator(
+              onRefresh: loadClasses,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: classes.length,
+                itemBuilder: (context, index) {
+                  final item = classes[index];
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Colors.green.shade50,
+                        child: const Icon(Icons.class_, color: Colors.green),
+                      ),
+                      title: Text(item['TenLop']?.toString() ?? 'Lớp chưa tên', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 6),
+                          Text('Khóa học: ${item['MaKhoaHoc'] ?? 'Chưa cập nhật'}'),
+                          Text('Giáo viên phụ trách: ${item['MaGiaoVien'] ?? 'Chưa phân công'}'),
+                        ],
+                      ),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    ),
+                  );
+                },
+              ),
             ),
     );
   }

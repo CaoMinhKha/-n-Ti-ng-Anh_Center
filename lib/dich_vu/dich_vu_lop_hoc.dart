@@ -1,19 +1,13 @@
-﻿import 'dart:convert';
-import 'dart:developer' as developer;
-import 'package:http/http.dart' as http;
-import '../tien_ich/hang_so_api.dart';
+﻿import 'dart:developer' as developer;
+import 'api_client.dart';
+import 'api_response_helper.dart';
 
 class ClassService {
-  static Future<List<dynamic>> getClasses() async {
+  static Future<List<dynamic>> getClasses({String? token}) async {
     try {
-      final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/lophoc'),
-      );
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        if (json['status'] == true) {
-          return List<dynamic>.from(json['data'] ?? []);
-        }
+      final json = await ApiClient.getJson('lophoc', token: token);
+      if (json['status'] == true) {
+        return parseListResponse(json);
       }
       return [];
     } catch (e) {

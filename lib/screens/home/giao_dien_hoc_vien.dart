@@ -4,6 +4,9 @@ import '../../tien_ich/phien_lam_viec_nguoi_dung.dart';
 import '../../thanh_phan/thanh_menu.dart';
 import '../student/giao_dien_danh_sach_lop_hoc_vien.dart';
 import '../student/giao_dien_dang_ky_khoa_hoc.dart';
+import '../student/giao_dien_khoa_hoc_hoc_vien.dart';
+import '../student/giao_dien_tra_tu.dart';
+import '../student/giao_dien_hoc_tap.dart';
 
 class GiaoDienHocVien extends StatefulWidget {
   const GiaoDienHocVien({super.key});
@@ -17,21 +20,19 @@ class _GiaoDienHocVienState extends State<GiaoDienHocVien> {
   int _currentIndex = 0;
   int _selectedLessonIndex = 11;
 
-  final List<String> _lessonTitles = [
-    'Lesson 1A.0: Introduction',
-    'Lesson 1A.1: Reading',
-    'Lesson 1A.2: Post - Reading',
-    'Lesson 1A.3: Listening A',
-    'Lesson 1A.4: Listening B',
-    'Lesson 1A.5: Speaking',
-    'Lesson 1A.6: Language Focus B',
-    'Lesson 1A.7: Language Focus A',
-    'Lesson 1B.1: Vocabulary',
-    'Lesson 1B.2: Listening a',
-    'Lesson 1B.3: Language Focus',
-    'Lesson 1B.4: Reading',
-    'Lesson 1B.5: Listening b',
-    'Lesson 1B.6: Speaking',
+  final List<Map<String, dynamic>> _lessonTitles = [
+    {'title': 'Lesson 1A.0: Introduction', 'xp': 40, 'done': true},
+    {'title': 'Lesson 1A.1: Reading', 'xp': 55, 'done': true},
+    {'title': 'Lesson 1A.2: Post - Reading', 'xp': 60, 'done': false},
+    {'title': 'Lesson 1A.3: Listening A', 'xp': 50, 'done': false},
+    {'title': 'Lesson 1A.4: Listening B', 'xp': 65, 'done': false},
+    {'title': 'Lesson 1A.5: Speaking', 'xp': 70, 'done': false},
+    {'title': 'Lesson 1A.6: Language Focus B', 'xp': 75, 'done': false},
+    {'title': 'Lesson 1A.7: Language Focus A', 'xp': 80, 'done': false},
+    {'title': 'Lesson 1B.1: Vocabulary', 'xp': 85, 'done': false},
+    {'title': 'Lesson 1B.2: Listening a', 'xp': 90, 'done': false},
+    {'title': 'Lesson 1B.3: Language Focus', 'xp': 95, 'done': false},
+    {'title': 'Lesson 1B.4: Reading', 'xp': 100, 'done': false},
   ];
 
   @override
@@ -113,6 +114,14 @@ class _GiaoDienHocVienState extends State<GiaoDienHocVien> {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
+          LinearProgressIndicator(
+            value: 0.62,
+            minHeight: 10,
+            backgroundColor: Colors.grey.shade200,
+            valueColor: const AlwaysStoppedAnimation(Color(0xFF4B8AF7)),
+          ),
+          const SizedBox(height: 12),
+          const SizedBox(height: 12),
           _buildLessonMenu(),
         ],
       ),
@@ -154,6 +163,11 @@ class _GiaoDienHocVienState extends State<GiaoDienHocVien> {
                 const Text(
                   'Tiếp tục luyện nghe và nói để giữ streak hôm nay nhé!',
                   style: TextStyle(color: Colors.white70, height: 1.4),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Streak 3 ngày • XP 540',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 18),
                 Row(
@@ -259,7 +273,7 @@ class _GiaoDienHocVienState extends State<GiaoDienHocVien> {
           ),
           const SizedBox(height: 18),
           Text(
-            selectedLesson,
+            selectedLesson['title'],
             style: const TextStyle(
               color: Colors.white,
               fontSize: 24,
@@ -374,7 +388,7 @@ class _GiaoDienHocVienState extends State<GiaoDienHocVien> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  _lessonTitles[index],
+                                  _lessonTitles[index]['title'],
                                   style: TextStyle(
                                     fontWeight: isSelected
                                         ? FontWeight.bold
@@ -383,7 +397,7 @@ class _GiaoDienHocVienState extends State<GiaoDienHocVien> {
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  isSelected ? 'Đang học' : 'Chưa học',
+                                  isSelected ? 'Đang học' : (_lessonTitles[index]['done'] == true ? 'Đã hoàn thành' : 'Chưa học'),
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: Colors.black54,
@@ -396,7 +410,9 @@ class _GiaoDienHocVienState extends State<GiaoDienHocVien> {
                             Icon(
                               Icons.check_circle,
                               color: Colors.blue.shade700,
-                            ),
+                            )
+                          else if (_lessonTitles[index]['done'] == true)
+                            const Icon(Icons.done_all, color: Colors.green),
                         ],
                       ),
                     ),
@@ -441,6 +457,35 @@ class _GiaoDienHocVienState extends State<GiaoDienHocVien> {
                 MaterialPageRoute(
                   builder: (_) => const StudentClassListScreen(),
                 ),
+              ),
+            ),
+            _buildActionCard(
+              Icons.translate,
+              'Tra từ',
+              'Tìm nghĩa và ví dụ',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const DictionaryScreen()),
+              ),
+            ),
+            _buildActionCard(
+              Icons.menu_book,
+              'Khám phá',
+              'Xem các khóa học',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const StudentCourseExplorerScreen(),
+                ),
+              ),
+            ),
+            _buildActionCard(
+              Icons.school,
+              'Bài học',
+              'Luyện nghe và nói',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const StudyScreen()),
               ),
             ),
             _buildActionCard(
@@ -490,7 +535,20 @@ class _GiaoDienHocVienState extends State<GiaoDienHocVien> {
             'Học bài',
             'Mở nội dung bài học',
             Icons.school,
-            () => Navigator.pushNamed(context, AppRoutes.lessonDragMatch),
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const StudyScreen()),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _infoCard(
+            'Tra từ',
+            'Tra nghĩa và ví dụ nhanh',
+            Icons.translate,
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DictionaryScreen()),
+            ),
           ),
         ],
       ),

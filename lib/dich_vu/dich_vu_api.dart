@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../tien_ich/hang_so_api.dart';
 
 class ApiService {
 
-  static const String baseUrl =
-      "http://192.168.1.4/admin_ENGLISHcenter/app/api";
+  static String get baseUrl => ApiConstants.baseUrl;
 
   // Lấy danh sách khóa học
   static Future<List<dynamic>> getCourses() async {

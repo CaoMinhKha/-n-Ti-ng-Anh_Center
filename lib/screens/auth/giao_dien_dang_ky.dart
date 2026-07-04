@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../dich_vu/dich_vu_dang_ky.dart';
+import '../../tien_ich/phien_lam_viec_nguoi_dung.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -67,11 +68,11 @@ class _RegisterScreenState
 
       if (result["status"] ==
           "success") {
-
+        await UserSession.saveUserName(hoten.text.trim());
+        await UserSession.saveUserRole('student');
         Future.delayed(
           const Duration(seconds: 1),
           () {
-
             if (mounted) {
               Navigator.pop(context);
             }

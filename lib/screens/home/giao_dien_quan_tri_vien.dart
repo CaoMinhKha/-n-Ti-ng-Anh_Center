@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import '../../duong_dan/duong_dan.dart';
 import '../../tien_ich/phien_lam_viec_nguoi_dung.dart';
 import '../../thanh_phan/thanh_menu.dart';
-import '../home/giao_dien_thay_the.dart';
 import '../admin/giao_dien_giao_vien_admin.dart';
 import '../admin/giao_dien_hoc_vien_admin.dart';
+import '../admin/giao_dien_quan_tri_admin.dart';
+import '../admin/giao_dien_khoa_hoc_admin.dart';
+import '../admin/giao_dien_lop_admin.dart';
 
 class GiaoDienQuanTriVien extends StatefulWidget {
   const GiaoDienQuanTriVien({super.key});
@@ -188,14 +190,7 @@ class _GiaoDienQuanTriVienState extends State<GiaoDienQuanTriVien> {
               _buildQuickButton(
                 Icons.person,
                 'Tài khoản',
-                () => _navigateTo(
-                  context,
-                  const PlaceholderScreen(
-                    title: 'Quản lý tài khoản',
-                    description:
-                        'Chức năng quản lý tài khoản admin/học viên/giáo viên.',
-                  ),
-                ),
+                () => _navigateTo(context, const AdminManagementScreen()),
               ),
               _buildQuickButton(
                 Icons.school,
@@ -210,13 +205,7 @@ class _GiaoDienQuanTriVienState extends State<GiaoDienQuanTriVien> {
               _buildQuickButton(
                 Icons.menu_book,
                 'Khóa học',
-                () => _navigateTo(
-                  context,
-                  const PlaceholderScreen(
-                    title: 'Quản lý khóa học',
-                    description: 'Chức năng xem/ thêm/ sửa/ xóa khóa học.',
-                  ),
-                ),
+                () => _navigateTo(context, const AdminCourseScreen()),
               ),
             ],
           ),
@@ -275,26 +264,14 @@ class _GiaoDienQuanTriVienState extends State<GiaoDienQuanTriVien> {
             'Quản lý khóa học',
             'Quản lý nội dung và lịch học',
             Icons.menu_book,
-            () => _navigateTo(
-              context,
-              const PlaceholderScreen(
-                title: 'Quản lý khóa học',
-                description: 'Chức năng quản lý khóa học.',
-              ),
-            ),
+            () => _navigateTo(context, const AdminCourseScreen()),
           ),
           const SizedBox(height: 12),
           _buildInfoCard(
-            'Báo cáo thống kê',
-            'Nhận báo cáo tổng quan trung tâm',
+            'Quản trị toàn diện',
+            'Quản lý người dùng, danh mục, lớp học và đăng ký',
             Icons.bar_chart,
-            () => _navigateTo(
-              context,
-              const PlaceholderScreen(
-                title: 'Báo cáo thống kê',
-                description: 'Hiển thị báo cáo tổng quan của trung tâm.',
-              ),
-            ),
+            () => _navigateTo(context, const AdminManagementScreen()),
           ),
         ],
       ),
@@ -337,9 +314,9 @@ class _GiaoDienQuanTriVienState extends State<GiaoDienQuanTriVien> {
                   const SizedBox(height: 20),
                   ElevatedButton.icon(
                     onPressed: () =>
-                        _navigateTo(context, const AdminTeacherScreen()),
-                    icon: const Icon(Icons.school),
-                    label: const Text('Quản lý giáo viên'),
+                        _navigateTo(context, const AdminManagementScreen()),
+                    icon: const Icon(Icons.manage_accounts),
+                    label: const Text('Quản trị toàn diện'),
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size.fromHeight(48),
                     ),
@@ -350,6 +327,16 @@ class _GiaoDienQuanTriVienState extends State<GiaoDienQuanTriVien> {
                         _navigateTo(context, const AdminStudentScreen()),
                     icon: const Icon(Icons.group),
                     label: const Text('Quản lý học viên'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () =>
+                        _navigateTo(context, const AdminClassScreen()),
+                    icon: const Icon(Icons.class_),
+                    label: const Text('Quản lý lớp học'),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(48),
                     ),

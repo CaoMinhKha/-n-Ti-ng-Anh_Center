@@ -1,9 +1,9 @@
-﻿import 'dart:developer' as developer;
+import 'dart:developer' as developer;
 import 'api_client.dart';
 import 'api_response_helper.dart';
 
-class CourseService {
-  static Future<List<dynamic>> getCourses({String? token}) async {
+class UniversityService {
+  static Future<List<dynamic>> getPrograms({String? token}) async {
     try {
       final json = await ApiClient.getJson('khoahoc', token: token);
       if (json['status'] == true) {
@@ -11,7 +11,7 @@ class CourseService {
       }
       return [];
     } catch (e) {
-      developer.log('CourseService error: $e', name: 'CourseService');
+      developer.log('UniversityService error: $e', name: 'UniversityService');
       return [];
     }
   }
