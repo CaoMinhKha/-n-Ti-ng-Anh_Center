@@ -1,5 +1,7 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 
+import '../../dich_vu/dich_vu_bai_hoc.dart';
 import '../../tien_ich/phien_lam_viec_nguoi_dung.dart';
 
 class LessonDragMatchScreen extends StatefulWidget {
@@ -11,6 +13,11 @@ class LessonDragMatchScreen extends StatefulWidget {
 
 class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
   bool _isLoadingRole = true;
+  bool _isVideoLoading = false;
+  String? _videoError;
+  VideoPlayerController? _videoController;
+  List<Map<String, dynamic>> _remoteLessons = [];
+
   final List<String> _lessonTitles = [
     'Lesson 1A.0: Introduction',
     'Lesson 1A.1: Reading',
@@ -34,6 +41,63 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
   void initState() {
     super.initState();
     _loadUserRole();
+    _loadLessonVideos();
+  }
+
+  Future<void> _loadLessonVideos() async {
+    final lessons = await LessonService.getLessons(slug: 'video', includeFull: true);
+    if (!mounted) return;
+    _remoteLessons = lessons.whereType<Map<String, dynamic>>().toList();
+    if (_remoteLessons.isNotEmpty) {
+      _setVideoForLesson(_lessonTitles[_selectedLessonIndex]);
+    }
+  }
+
+  Future<void> _setVideoForLesson(String lessonTitle) async {
+    if (!mounted) return;
+
+    final selectedLesson = _remoteLessons.firstWhere(
+      (item) => item['TieuDe']?.toString() == lessonTitle,
+      orElse: () => _remoteLessons.first,
+    );
+
+    final videoUrl = selectedLesson['VideoUrl']?.toString();
+    if (videoUrl == null || videoUrl.isEmpty) {
+      _videoController?.dispose();
+      setState(() {
+        _videoController = null;
+        _videoError = 'Không có URL video phù hợp';
+      });
+      return;
+    }
+
+    _videoController?.dispose();
+    setState(() {
+      _isVideoLoading = true;
+      _videoError = null;
+      _videoController = null;
+    });
+
+    try {
+      final controller = VideoPlayerController.network(videoUrl);
+      await controller.initialize();
+      controller.setLooping(false);
+      setState(() {
+        _videoController = controller;
+        _isVideoLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _videoError = 'Lỗi tải video: $e';
+        _isVideoLoading = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _videoController?.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUserRole() async {
@@ -224,7 +288,12 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
               itemBuilder: (context, index) {
                 final selected = index == _selectedLessonIndex;
                 return InkWell(
-                  onTap: () => setState(() => _selectedLessonIndex = index),
+                  onTap: () {
+                    if (!selected) {
+                      setState(() => _selectedLessonIndex = index);
+                      _setVideoForLesson(_lessonTitles[index]);
+                    }
+                  },
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
                     decoration: BoxDecoration(
@@ -283,9 +352,47 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
                           width: double.infinity,
                           height: 220,
                           color: Colors.black87,
-                          child: const Center(
-                            child: Icon(Icons.play_circle_fill, color: Colors.white, size: 64),
-                          ),
+                          child: _isVideoLoading
+                              ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                              : _videoError != null
+                                  ? Center(
+                                      child: Text(
+                                        _videoError!,
+                                        style: const TextStyle(color: Colors.white),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    )
+                                  : _videoController != null && _videoController!.value.isInitialized
+                                      ? Stack(
+                                          alignment: Alignment.bottomCenter,
+                                          children: [
+                                            VideoPlayer(_videoController!),
+                                            VideoProgressIndicator(_videoController!, allowScrubbing: true),
+                                            Positioned(
+                                              bottom: 8,
+                                              right: 8,
+                                              child: IconButton(
+                                                icon: Icon(
+                                                  _videoController!.value.isPlaying ? Icons.pause_circle : Icons.play_circle,
+                                                  size: 40,
+                                                  color: Colors.white,
+                                                ),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    if (_videoController!.value.isPlaying) {
+                                                      _videoController!.pause();
+                                                    } else {
+                                                      _videoController!.play();
+                                                    }
+                                                  });
+                                                },
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      : const Center(
+                                          child: Icon(Icons.play_circle_fill, color: Colors.white, size: 64),
+                                        ),
                         ),
                         Padding(
                           padding: const EdgeInsets.all(16),

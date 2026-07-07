@@ -1,6 +1,7 @@
-﻿import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../tien_ich/hang_so_api.dart';
+﻿import 'dart:developer' as developer;
+
+import 'api_client.dart';
+import '../tien_ich/phien_lam_viec_nguoi_dung.dart';
 
 class CourseRegisterService {
   static Future<String> registerCourse({
@@ -8,21 +9,45 @@ class CourseRegisterService {
     required int maKhoaHoc,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse("${ApiConstants.baseUrl}/dangkylop"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "MaHocVien": maHocVien,
-          "MaLop": maKhoaHoc,
-        }),
+      final payload = {
+        'MaHocVien': maHocVien,
+        'MaKhoaHoc': maKhoaHoc,
+      };
+
+      final token = await UserSession.getToken();
+      final json = await ApiClient.postJson(
+        'dangkylop',
+        payload,
+        token: token?.isNotEmpty == true ? token : null,
       );
 
-      final json = jsonDecode(response.body);
+      final status = json['status'];
+      final message = json['message']?.toString() ?? '';
+      final normalizedMessage = message.toLowerCase();
 
-      return json["status"];
+      if (status == true || status == 1 || status == '1' || status == 'success' || normalizedMessage == 'success') {
+        return 'success';
+      }
 
-    } catch (e) {
-      return "error";
+      if (status == 'exist' || status == 'đã đăng ký' ||
+          normalizedMessage.contains('exist') ||
+          normalizedMessage.contains('đã đăng ký') ||
+          normalizedMessage.contains('already registered')) {
+        return 'exist';
+      }
+
+      if (message.isNotEmpty) {
+        return message;
+      }
+
+      return 'error';
+    } catch (e, stackTrace) {
+      developer.log(
+        'CourseRegisterService.registerCourse failed',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return e.toString();
     }
   }
 }
