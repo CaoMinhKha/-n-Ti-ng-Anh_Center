@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'api_client.dart';
+import '../tien_ich/phien_lam_viec_nguoi_dung.dart';
 
 class AppDataService {
   static const String _usersKey = 'admin_users';
@@ -296,29 +298,103 @@ class AppDataService {
     await prefs.setString(_lessonsKey, jsonEncode(left));
   }
 
+  static Map<String, dynamic> normalizeQuestionForUi(Map<String, dynamic> question) {
+    final normalized = Map<String, dynamic>.from(question);
+    normalized['id'] = (question['id'] ?? question['MaCauHoi'] ?? '').toString();
+    normalized['NoiDung'] = question['NoiDung'] ?? '';
+    normalized['Loai'] = question['Loai'] ?? question['LoaiCauHoi'] ?? 'multiple_choice';
+    normalized['LoaiCauHoi'] = normalized['Loai'];
+    normalized['MaBaiHoc'] = question['MaBaiHoc'] ?? 0;
+    normalized['ThuTu'] = question['ThuTu'] ?? 0;
+
+    final rawAnswers = question['DapAn'];
+    if (rawAnswers is List) {
+      normalized['DapAn'] = rawAnswers.map((answer) {
+        if (answer is Map) {
+          return Map<String, dynamic>.from(answer);
+        }
+        return {'NoiDung': answer.toString(), 'LaDapAnDung': false};
+      }).toList();
+    } else if (rawAnswers is String && rawAnswers.isNotEmpty) {
+      normalized['DapAn'] = [
+        {'NoiDung': rawAnswers, 'LaDapAnDung': true}
+      ];
+    } else {
+      normalized['DapAn'] = <Map<String, dynamic>>[];
+    }
+
+    return normalized;
+  }
+
   static Future<List<Map<String, dynamic>>> loadQuestions() async {
+    try {
+      final token = await UserSession.getToken();
+      final json = await ApiClient.getJson('cauhoi', token: token);
+      if (json['status'] == true) {
+        final data = json['data'];
+        if (data is List) {
+          return data.map((item) => normalizeQuestionForUi(Map<String, dynamic>.from(item))).toList();
+        }
+        if (data != null) {
+          return [normalizeQuestionForUi(Map<String, dynamic>.from(data))];
+        }
+      }
+    } catch (_) {}
+
     final prefs = await _prefs();
     final raw = prefs.getString(_questionsKey) ?? '[]';
     final decoded = jsonDecode(raw) as List<dynamic>;
-    return decoded.map((e) => Map<String, dynamic>.from(e)).toList();
+    return decoded.map((e) => normalizeQuestionForUi(Map<String, dynamic>.from(e))).toList();
   }
 
   static Future<Map<String, dynamic>> addQuestion(Map<String, dynamic> question) async {
+    try {
+      final token = await UserSession.getToken();
+      final payload = {
+        'MaBaiHoc': question['MaBaiHoc'] ?? 0,
+        'NoiDung': question['NoiDung'] ?? 'Câu hỏi mới',
+        'LoaiCauHoi': question['Loai'] ?? question['LoaiCauHoi'] ?? 'multiple_choice',
+        'ThuTu': question['ThuTu'] ?? 0,
+        'DapAn': question['DapAn'] ?? [],
+      };
+      final json = await ApiClient.postJson('cauhoi', payload, token: token);
+      if (json['status'] == true) {
+        final created = Map<String, dynamic>.from(question);
+        created['id'] = json['id']?.toString() ?? '';
+        created['Loai'] = payload['LoaiCauHoi'];
+        created['LoaiCauHoi'] = payload['LoaiCauHoi'];
+        created['MaBaiHoc'] = payload['MaBaiHoc'];
+        created['ThuTu'] = payload['ThuTu'];
+        created['DapAn'] = payload['DapAn'];
+        return normalizeQuestionForUi(created);
+      }
+    } catch (_) {}
+
     final questions = await loadQuestions();
     final nextId = (questions.length + 1).toString();
     final record = {
       'id': nextId,
       'NoiDung': question['NoiDung'] ?? 'Câu hỏi mới',
       'DapAn': question['DapAn'] ?? '',
-      'Loai': question['Loai'] ?? 'choice',
+      'Loai': question['Loai'] ?? 'multiple_choice',
     };
-    questions.add(record);
-    final prefs = await _prefs();
-    await prefs.setString(_questionsKey, jsonEncode(questions));
-    return record;
+    return normalizeQuestionForUi(record);
   }
 
   static Future<void> updateQuestion(String id, Map<String, dynamic> question) async {
+    try {
+      final token = await UserSession.getToken();
+      final payload = {
+        'MaBaiHoc': question['MaBaiHoc'] ?? 0,
+        'NoiDung': question['NoiDung'] ?? '',
+        'LoaiCauHoi': question['Loai'] ?? question['LoaiCauHoi'] ?? 'multiple_choice',
+        'ThuTu': question['ThuTu'] ?? 0,
+        'DapAn': question['DapAn'] ?? [],
+      };
+      await ApiClient.putJson('cauhoi', payload, token: token, id: int.tryParse(id));
+      return;
+    } catch (_) {}
+
     final questions = await loadQuestions();
     final index = questions.indexWhere((item) => item['id'].toString() == id);
     if (index >= 0) {
@@ -329,6 +405,12 @@ class AppDataService {
   }
 
   static Future<void> deleteQuestion(String id) async {
+    try {
+      final token = await UserSession.getToken();
+      await ApiClient.deleteJson('cauhoi', token: token, id: int.tryParse(id));
+      return;
+    } catch (_) {}
+
     final questions = await loadQuestions();
     final left = questions.where((item) => item['id'].toString() != id).toList();
     final prefs = await _prefs();

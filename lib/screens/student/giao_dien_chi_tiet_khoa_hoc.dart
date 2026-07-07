@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import '../../dich_vu/dich_vu_quan_tri.dart';
 
 class CourseDetailScreen extends StatefulWidget {
   final Map<String, dynamic> course;
@@ -12,7 +13,6 @@ class CourseDetailScreen extends StatefulWidget {
 
 class _CourseDetailScreenState extends State<CourseDetailScreen> {
   final FlutterTts _flutterTts = FlutterTts();
-  final List<String> _options = ['to study', 'studied', 'studying', 'study'];
   String? _selectedOption;
 
   @override
@@ -75,39 +75,68 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             const SizedBox(height: 20),
             const Text('Mini quiz', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             const SizedBox(height: 8),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Chọn đáp án đúng cho câu: "I want ___ English every day."', style: TextStyle(fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 8),
-                    RadioGroup<String>(
-                      groupValue: _selectedOption,
-                      onChanged: (value) => setState(() => _selectedOption = value),
-                      child: Column(
-                        children: _options
-                            .map((option) => RadioListTile<String>(
-                                  title: Text(option),
-                                  value: option,
-                                ))
-                            .toList(),
-                      ),
+            FutureBuilder<List<Map<String, dynamic>>>(
+              future: AppDataService.loadQuestions(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Text('Lỗi tải câu hỏi: ${snapshot.error}');
+                }
+                final questions = snapshot.data ?? [];
+                if (questions.isEmpty) {
+                  return const Text('Hiện chưa có câu hỏi nào.');
+                }
+                final question = questions.first;
+                final answers = ((question['DapAn'] as List<dynamic>?) ?? <dynamic>[])
+                    .map((answer) {
+                      if (answer is Map) {
+                        return answer['NoiDung']?.toString() ?? '';
+                      }
+                      return answer.toString();
+                    })
+                    .where((text) => text.isNotEmpty)
+                    .toList();
+                final correctAnswer = ((question['DapAn'] as List<dynamic>?) ?? <dynamic>[]) .firstWhere(
+                  (answer) => answer is Map && (answer['LaDapAnDung'] == true || answer['isCorrect'] == true),
+                  orElse: () => null,
+                );
+                final correctText = correctAnswer is Map ? correctAnswer['NoiDung']?.toString() ?? '' : '';
+
+                if (answers.isEmpty) {
+                  return const Text('Câu hỏi không có đáp án hợp lệ.');
+                }
+
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Câu hỏi: ${question['NoiDung'] ?? ''}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 8),
+                        ...answers.map((option) => RadioListTile<String>(
+                              title: Text(option),
+                              value: option,
+                              groupValue: _selectedOption,
+                              onChanged: (value) => setState(() => _selectedOption = value),
+                            )),
+                        const SizedBox(height: 8),
+                        ElevatedButton(
+                          onPressed: () {
+                            final isCorrect = _selectedOption == correctText;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(isCorrect ? 'Đúng rồi!' : 'Chưa đúng, đáp án đúng là: $correctText')),
+                            );
+                          },
+                          child: const Text('Kiểm tra đáp án'),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    ElevatedButton(
-                      onPressed: () {
-                        final isCorrect = _selectedOption == 'to study';
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(isCorrect ? 'Đúng rồi!' : 'Chưa đúng, đáp án đúng là: to study')),
-                        );
-                      },
-                      child: const Text('Kiểm tra đáp án'),
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 20),
             const Text('Bài học mẫu', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),

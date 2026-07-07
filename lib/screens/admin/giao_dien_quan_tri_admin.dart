@@ -1,3 +1,9 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
+import 'package:csv/csv.dart';
+import 'package:excel/excel.dart';
 import 'package:flutter/material.dart';
 import '../../dich_vu/dich_vu_quan_tri.dart';
 
@@ -229,8 +235,10 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
       items: _applySearch(questions),
       onRefresh: _loadData,
       onAdd: () => _showQuestionDialog(),
+      extraAction: _buildImportButton(),
       itemBuilder: (item) => _QuestionCard(
         item: item,
+        onTap: () => _showQuestionDetails(item),
         onEdit: () => _showQuestionDialog(question: item),
         onDelete: () => _deleteQuestion(item),
       ),
@@ -258,6 +266,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
     required List<Map<String, dynamic>> items,
     required Future<void> Function() onRefresh,
     required VoidCallback onAdd,
+    Widget? extraAction,
     required Widget Function(Map<String, dynamic> item) itemBuilder,
   }) {
     return RefreshIndicator(
@@ -267,10 +276,18 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
         children: [
           Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
-          ElevatedButton.icon(
-            onPressed: onAdd,
-            icon: const Icon(Icons.add_circle_outline),
-            label: Text(addLabel),
+          Row(
+            children: [
+              ElevatedButton.icon(
+                onPressed: onAdd,
+                icon: const Icon(Icons.add_circle_outline),
+                label: Text(addLabel),
+              ),
+              if (extraAction != null) ...[
+                const SizedBox(width: 12),
+                extraAction,
+              ],
+            ],
           ),
           const SizedBox(height: 12),
           TextField(
@@ -634,38 +651,311 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
 
   Future<void> _showQuestionDialog({Map<String, dynamic>? question}) async {
     final contentController = TextEditingController(text: question?['NoiDung']?.toString() ?? '');
-    final answerController = TextEditingController(text: question?['DapAn']?.toString() ?? '');
-    String type = question?['Loai']?.toString() ?? 'choice';
+    final lessonController = TextEditingController(text: question?['MaBaiHoc']?.toString() ?? '');
+    final orderController = TextEditingController(text: question?['ThuTu']?.toString() ?? '0');
+    String type = (question?['Loai'] ?? question?['LoaiCauHoi'] ?? 'multiple_choice').toString();
+    final optionItems = <Map<String, dynamic>>[];
+    final optionControllers = <TextEditingController>[];
+
+    final existingAnswers = question?['DapAn'];
+    if (existingAnswers is List && existingAnswers.isNotEmpty) {
+      for (final answer in existingAnswers) {
+        if (answer is Map) {
+          optionItems.add({
+            'NoiDung': answer['NoiDung']?.toString() ?? '',
+            'LaDapAnDung': answer['LaDapAnDung'] == true || answer['isCorrect'] == true,
+          });
+        } else {
+          optionItems.add({'NoiDung': answer.toString(), 'LaDapAnDung': false});
+        }
+      }
+    }
+
+    if (optionItems.isEmpty) {
+      optionItems.addAll([
+        {'NoiDung': '', 'LaDapAnDung': true},
+        {'NoiDung': '', 'LaDapAnDung': false},
+      ]);
+    }
+
+    for (final item in optionItems) {
+      optionControllers.add(TextEditingController(text: item['NoiDung']?.toString() ?? ''));
+    }
+
+    await showDialog<void>(
+      context: context,
+      builder: (_) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              title: Text(question == null ? 'Thêm câu hỏi' : 'Sửa câu hỏi'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(controller: contentController, maxLines: 2, decoration: const InputDecoration(labelText: 'Nội dung câu hỏi')),
+                    TextField(controller: lessonController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Mã bài học')),
+                    TextField(controller: orderController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Thứ tự')),
+                    DropdownButtonFormField<String>(
+                      value: type,
+                      decoration: const InputDecoration(labelText: 'Loại câu hỏi'),
+                      items: const [
+                        DropdownMenuItem(value: 'multiple_choice', child: Text('Trắc nghiệm')),
+                        DropdownMenuItem(value: 'essay', child: Text('Tự luận')),
+                        DropdownMenuItem(value: 'fill_blank', child: Text('Điền vào chỗ trống')),
+                      ],
+                      onChanged: (value) => setDialogState(() => type = value ?? 'multiple_choice'),
+                    ),
+                    const SizedBox(height: 12),
+                    const Align(alignment: Alignment.centerLeft, child: Text('Danh sách đáp án', style: TextStyle(fontWeight: FontWeight.bold))),
+                    const SizedBox(height: 8),
+                    ...List.generate(optionItems.length, (index) {
+                      final item = optionItems[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: optionControllers[index],
+                                decoration: InputDecoration(labelText: 'Đáp án ${index + 1}'),
+                              ),
+                            ),
+                            Checkbox(
+                              value: item['LaDapAnDung'] == true,
+                              onChanged: (value) => setDialogState(() => item['LaDapAnDung'] = value ?? false),
+                            ),
+                            IconButton(
+                              onPressed: optionItems.length > 1
+                                  ? () => setDialogState(() {
+                                        optionItems.removeAt(index);
+                                        optionControllers.removeAt(index);
+                                      })
+                                  : null,
+                              icon: const Icon(Icons.delete_outline),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                    TextButton.icon(
+                      onPressed: () => setDialogState(() {
+                        optionItems.add({'NoiDung': '', 'LaDapAnDung': false});
+                        optionControllers.add(TextEditingController());
+                      }),
+                      icon: const Icon(Icons.add_circle_outline),
+                      label: const Text('Thêm đáp án'),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Hủy')),
+                ElevatedButton(
+                  onPressed: () async {
+                    final answers = <Map<String, dynamic>>[];
+                    for (var index = 0; index < optionControllers.length; index++) {
+                      final text = optionControllers[index].text.trim();
+                      if (text.isEmpty) continue;
+                      answers.add({
+                        'NoiDung': text,
+                        'LaDapAnDung': optionItems[index]['LaDapAnDung'] == true,
+                      });
+                    }
+                    final payload = {
+                      'MaBaiHoc': int.tryParse(lessonController.text.trim()) ?? 0,
+                      'NoiDung': contentController.text.trim(),
+                      'Loai': type,
+                      'LoaiCauHoi': type,
+                      'ThuTu': int.tryParse(orderController.text.trim()) ?? 0,
+                      'DapAn': answers,
+                    };
+                    if (question == null) {
+                      await AppDataService.addQuestion(payload);
+                    } else {
+                      await AppDataService.updateQuestion(question['id'].toString(), payload);
+                    }
+                    if (!mounted) return;
+                    Navigator.pop(dialogContext);
+                    await _loadData();
+                  },
+                  child: const Text('Lưu'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildImportButton() {
+    return OutlinedButton.icon(
+      onPressed: _importQuestions,
+      icon: const Icon(Icons.upload_file),
+      label: const Text('Import câu hỏi'),
+    );
+  }
+
+  Future<void> _importQuestions() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['csv', 'xls', 'xlsx'],
+      withData: true,
+    );
+
+    if (result == null || result.files.isEmpty) {
+      return;
+    }
+
+    final file = result.files.first;
+    final bytes = file.bytes;
+    if (bytes == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Không thể đọc file nhập.')));
+      return;
+    }
+
+    final importedQuestions = _parseQuestionsFromBytes(bytes, file.name);
+    if (importedQuestions.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Không tìm thấy câu hỏi hợp lệ trong file.')));
+      return;
+    }
+
+    int count = 0;
+    for (final question in importedQuestions) {
+      await AppDataService.addQuestion(question);
+      count++;
+    }
+
+    if (!mounted) return;
+    await _loadData();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Đã import $count câu hỏi.')));
+  }
+
+  List<Map<String, dynamic>> _parseQuestionsFromBytes(Uint8List bytes, String fileName) {
+    final lowerName = fileName.toLowerCase();
+    if (lowerName.endsWith('.csv')) {
+      return _parseQuestionsFromCsv(utf8.decode(bytes));
+    }
+    return _parseQuestionsFromExcel(bytes);
+  }
+
+  List<Map<String, dynamic>> _parseQuestionsFromCsv(String content) {
+    final rows = const CsvToListConverter().convert(content, eol: '\n');
+    return _parseQuestionsFromRows(rows);
+  }
+
+  List<Map<String, dynamic>> _parseQuestionsFromExcel(Uint8List bytes) {
+    final excel = Excel.decodeBytes(bytes);
+    final rows = <List<dynamic>>[];
+    for (final table in excel.tables.values) {
+      if (table.maxRows > 0) {
+        rows.addAll(table.rows);
+      }
+    }
+    return _parseQuestionsFromRows(rows);
+  }
+
+  List<Map<String, dynamic>> _parseQuestionsFromRows(List<List<dynamic>> rows) {
+    if (rows.isEmpty) {
+      return [];
+    }
+
+    final headers = rows.first.map((cell) => cell?.toString().trim().toLowerCase() ?? '').toList();
+    final questions = <Map<String, dynamic>>[];
+
+    for (var rowIndex = 1; rowIndex < rows.length; rowIndex++) {
+      final row = rows[rowIndex];
+      if (row.every((cell) => cell == null || cell.toString().trim().isEmpty)) {
+        continue;
+      }
+
+      final rowData = <String, String>{};
+      for (var colIndex = 0; colIndex < headers.length; colIndex++) {
+        final key = headers[colIndex];
+        if (key.isEmpty || colIndex >= row.length) {
+          continue;
+        }
+        rowData[key] = row[colIndex]?.toString().trim() ?? '';
+      }
+
+      final question = <String, dynamic>{
+        'MaBaiHoc': int.tryParse(rowData['mabaihoc'] ?? rowData['lessonid'] ?? rowData['lesson'] ?? '') ?? 0,
+        'NoiDung': rowData['noidung'] ?? rowData['question'] ?? rowData['content'] ?? '',
+        'LoaiCauHoi': rowData['loaicauhoi'] ?? rowData['type'] ?? 'multiple_choice',
+        'ThuTu': int.tryParse(rowData['thutu'] ?? rowData['order'] ?? '') ?? 0,
+        'DapAn': <Map<String, dynamic>>[],
+      };
+
+      for (final entry in rowData.entries) {
+        if (entry.key.startsWith('dapan') && entry.key != 'dapan') {
+          final answerIndex = entry.key.replaceFirst('dapan', '');
+          final answerText = entry.value;
+          if (answerText.isEmpty) {
+            continue;
+          }
+          final correctKey = 'correct$answerIndex';
+          final correctText = rowData[correctKey]?.toLowerCase() ?? rowData['ladapan$answerIndex']?.toLowerCase() ?? '';
+          final isCorrect = correctText == '1' || correctText == 'true' || correctText == 'yes' || correctText == 'đúng';
+          (question['DapAn'] as List).add({'NoiDung': answerText, 'LaDapAnDung': isCorrect});
+        }
+      }
+
+      if ((question['DapAn'] as List).isEmpty && rowData.containsKey('dapan')) {
+        final answerText = rowData['dapan'] ?? '';
+        final correctText = rowData['ladapan']?.toLowerCase() ?? rowData['correct']?.toLowerCase() ?? '';
+        final isCorrect = correctText == '1' || correctText == 'true' || correctText == 'yes' || correctText == 'đúng';
+        if (answerText.isNotEmpty) {
+          (question['DapAn'] as List).add({'NoiDung': answerText, 'LaDapAnDung': isCorrect});
+        }
+      }
+
+      if (question['NoiDung'].toString().isNotEmpty && (question['DapAn'] as List).isNotEmpty) {
+        questions.add(question);
+      }
+    }
+
+    return questions;
+  }
+
+  Future<void> _showQuestionDetails(Map<String, dynamic> question) async {
+    final answers = question['DapAn'] as List<dynamic>? ?? [];
     await showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text(question == null ? 'Thêm câu hỏi' : 'Sửa câu hỏi'),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(controller: contentController, maxLines: 2, decoration: const InputDecoration(labelText: 'Nội dung câu hỏi')),
-          TextField(controller: answerController, decoration: const InputDecoration(labelText: 'Đáp án')),
-          DropdownButtonFormField<String>(
-            initialValue: type,
-            decoration: const InputDecoration(labelText: 'Loại câu hỏi'),
-            items: const [DropdownMenuItem(value: 'choice', child: Text('Trắc nghiệm')), DropdownMenuItem(value: 'essay', child: Text('Tự luận'))],
-            onChanged: (value) => setState(() => type = value ?? 'choice'),
+        title: const Text('Chi tiết câu hỏi'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Nội dung: ${question['NoiDung'] ?? ''}'),
+              const SizedBox(height: 10),
+              Text('Mã bài học: ${question['MaBaiHoc'] ?? 'Không xác định'}'),
+              const SizedBox(height: 10),
+              Text('Loại câu hỏi: ${question['Loai'] ?? question['LoaiCauHoi'] ?? ''}'),
+              const SizedBox(height: 14),
+              const Text('Danh sách đáp án:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              ...answers.map((answer) {
+                final item = answer is Map ? Map<String, dynamic>.from(answer) : {'NoiDung': answer.toString(), 'LaDapAnDung': false};
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Icon(item['LaDapAnDung'] == true ? Icons.check_circle : Icons.circle_outlined, color: item['LaDapAnDung'] == true ? Colors.green : Colors.grey, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(child: Text(item['NoiDung']?.toString() ?? '')),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ],
           ),
-        ]),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
-          ElevatedButton(
-            onPressed: () async {
-              final payload = {'NoiDung': contentController.text.trim(), 'DapAn': answerController.text.trim(), 'Loai': type};
-              if (question == null) {
-                await AppDataService.addQuestion(payload);
-              } else {
-                await AppDataService.updateQuestion(question['id'].toString(), payload);
-              }
-              if (!mounted) return;
-              Navigator.pop(context);
-              await _loadData();
-            },
-            child: const Text('Lưu'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Đóng')),
         ],
       ),
     );
@@ -673,39 +963,45 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
 
   Future<void> _showTestDialog({Map<String, dynamic>? test}) async {
     final titleController = TextEditingController(text: test?['TenBaiKiemTra']?.toString() ?? '');
-    final durationController = TextEditingController(text: test?['ThoiLuong']?.toString() ?? '30 phút');
+    final durationController = TextEditingController(text: test?['ThoiLuong']?.toString() ?? '');
     String status = test?['TrangThai']?.toString() ?? 'draft';
+
     await showDialog<void>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text(test == null ? 'Thêm bài kiểm tra' : 'Sửa bài kiểm tra'),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Tên bài kiểm tra')),
-          TextField(controller: durationController, decoration: const InputDecoration(labelText: 'Thời lượng')),
-          DropdownButtonFormField<String>(
-            initialValue: status,
-            decoration: const InputDecoration(labelText: 'Trạng thái'),
-            items: const [DropdownMenuItem(value: 'draft', child: Text('Nháp')), DropdownMenuItem(value: 'published', child: Text('Đã xuất bản'))],
-            onChanged: (value) => setState(() => status = value ?? 'draft'),
-          ),
-        ]),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
-          ElevatedButton(
-            onPressed: () async {
-              final payload = {'TenBaiKiemTra': titleController.text.trim(), 'ThoiLuong': durationController.text.trim(), 'TrangThai': status};
-              if (test == null) {
-                await AppDataService.addTest(payload);
-              } else {
-                await AppDataService.updateTest(test['id'].toString(), payload);
-              }
-              if (!mounted) return;
-              Navigator.pop(context);
-              await _loadData();
-            },
-            child: const Text('Lưu'),
-          ),
-        ],
+      builder: (_) => StatefulBuilder(
+        builder: (dialogContext, dialogSetState) => AlertDialog(
+          title: Text(test == null ? 'Thêm bài kiểm tra' : 'Sửa bài kiểm tra'),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Tên bài kiểm tra')),
+            TextField(controller: durationController, decoration: const InputDecoration(labelText: 'Thời lượng')),
+            DropdownButtonFormField<String>(
+              value: status,
+              decoration: const InputDecoration(labelText: 'Trạng thái'),
+              items: const [
+                DropdownMenuItem(value: 'draft', child: Text('Nháp')),
+                DropdownMenuItem(value: 'published', child: Text('Đã xuất bản')),
+              ],
+              onChanged: (value) => dialogSetState(() => status = value ?? 'draft'),
+            ),
+          ]),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Hủy')),
+            ElevatedButton(
+              onPressed: () async {
+                final payload = {'TenBaiKiemTra': titleController.text.trim(), 'ThoiLuong': durationController.text.trim(), 'TrangThai': status};
+                if (test == null) {
+                  await AppDataService.addTest(payload);
+                } else {
+                  await AppDataService.updateTest(test['id'].toString(), payload);
+                }
+                if (!mounted) return;
+                Navigator.pop(dialogContext);
+                await _loadData();
+              },
+              child: const Text('Lưu'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -914,17 +1210,24 @@ class _LessonCard extends StatelessWidget {
 
 class _QuestionCard extends StatelessWidget {
   final Map<String, dynamic> item;
+  final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
-  const _QuestionCard({required this.item, required this.onEdit, required this.onDelete});
+  const _QuestionCard({required this.item, required this.onTap, required this.onEdit, required this.onDelete});
 
   @override
   Widget build(BuildContext context) {
+    final answers = item['DapAn'];
+    final answerCount = answers is List ? answers.length : 0;
+    final correctCount = answers is List
+        ? answers.whereType<Map>().where((answer) => answer['LaDapAnDung'] == true || answer['isCorrect'] == true).length
+        : 0;
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: ListTile(
+        onTap: onTap,
         title: Text(item['NoiDung']?.toString() ?? 'Câu hỏi'),
-        subtitle: Text('${item['Loai'] ?? ''} • Đáp án: ${item['DapAn'] ?? ''}'),
+        subtitle: Text('${item['Loai'] ?? ''} • $answerCount đáp án • $correctCount đúng'),
         trailing: Row(mainAxisSize: MainAxisSize.min, children: [
           IconButton(icon: const Icon(Icons.edit), onPressed: onEdit),
           IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: onDelete),

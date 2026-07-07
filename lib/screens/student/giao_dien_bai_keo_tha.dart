@@ -61,8 +61,12 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
       orElse: () => _remoteLessons.first,
     );
 
-    final videoUrl = selectedLesson['VideoUrl']?.toString();
-    if (videoUrl == null || videoUrl.isEmpty) {
+    final rawVideoUrl = selectedLesson['VideoUrl']?.toString();
+    final videoUrl = (rawVideoUrl != null && rawVideoUrl.isNotEmpty && !rawVideoUrl.toLowerCase().endsWith('.html'))
+        ? rawVideoUrl
+        : 'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4';
+
+    if (videoUrl.isEmpty) {
       _videoController?.dispose();
       setState(() {
         _videoController = null;
