@@ -33,12 +33,21 @@ class _StudentCourseScreenState extends State<StudentCourseScreen> {
 
   Future<void> registerCourse(int maKhoaHoc) async {
     final maHV = await UserSession.getMaHocVien();
-    if (!mounted || maHV == null) return;
+    if (!mounted) return;
+
+    if (maHV == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng đăng nhập trước khi đăng ký khóa học')),
+      );
+      return;
+    }
 
     final result = await CourseRegisterService.registerCourse(
       maHocVien: maHV,
       maKhoaHoc: maKhoaHoc,
     );
+
+    if (!mounted) return;
 
     final message = result == 'success'
         ? 'Đăng ký thành công'
@@ -46,7 +55,6 @@ class _StudentCourseScreenState extends State<StudentCourseScreen> {
             ? 'Bạn đã đăng ký rồi'
             : 'Đăng ký thất bại: $result';
 
-    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 

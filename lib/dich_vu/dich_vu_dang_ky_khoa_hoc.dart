@@ -4,6 +4,30 @@ import 'api_client.dart';
 import '../tien_ich/phien_lam_viec_nguoi_dung.dart';
 
 class CourseRegisterService {
+  static String parseRegisterResult(dynamic payload) {
+    final json = payload is Map ? Map<String, dynamic>.from(payload) : <String, dynamic>{};
+    final status = json['status'];
+    final message = json['message']?.toString() ?? '';
+    final normalizedMessage = message.toLowerCase();
+
+    if (status == true || status == 1 || status == '1' || status == 'success' || normalizedMessage == 'success') {
+      return 'success';
+    }
+
+    if (status == 'exist' || status == 'đã đăng ký' ||
+        normalizedMessage.contains('exist') ||
+        normalizedMessage.contains('đã đăng ký') ||
+        normalizedMessage.contains('already registered')) {
+      return 'exist';
+    }
+
+    if (message.isNotEmpty) {
+      return message;
+    }
+
+    return 'error';
+  }
+
   static Future<String> registerCourse({
     required int maHocVien,
     required int maKhoaHoc,
@@ -21,26 +45,7 @@ class CourseRegisterService {
         token: token?.isNotEmpty == true ? token : null,
       );
 
-      final status = json['status'];
-      final message = json['message']?.toString() ?? '';
-      final normalizedMessage = message.toLowerCase();
-
-      if (status == true || status == 1 || status == '1' || status == 'success' || normalizedMessage == 'success') {
-        return 'success';
-      }
-
-      if (status == 'exist' || status == 'đã đăng ký' ||
-          normalizedMessage.contains('exist') ||
-          normalizedMessage.contains('đã đăng ký') ||
-          normalizedMessage.contains('already registered')) {
-        return 'exist';
-      }
-
-      if (message.isNotEmpty) {
-        return message;
-      }
-
-      return 'error';
+      return parseRegisterResult(json);
     } catch (e, stackTrace) {
       developer.log(
         'CourseRegisterService.registerCourse failed',

@@ -256,7 +256,7 @@ class _LoginScreenState
 
                     const Text(
 
-                      "TRUNG TÂM\nANH NGỮ",
+                      "TRUNG TÂM\nNGOẠI NGỮ",
 
                       textAlign:
                           TextAlign.center,
