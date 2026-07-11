@@ -121,9 +121,12 @@ class LearningProgressScreen extends StatelessWidget {
                   children: const [
                     Text('Mẹo học tốt', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     SizedBox(height: 10),
-                    Text('• Hoàn thành ít nhất 1 bài học mỗi ngày để duy trì phản xạ.
-• Làm lại bài kiểm tra khi chưa đạt 80%.
-• Duy trì lịch học 20 phút mỗi ngày.'),
+                    Text(
+                      '• Hoàn thành ít nhất 1 bài học mỗi ngày để duy trì phản xạ.\n'
+                      '• Làm lại bài kiểm tra khi chưa đạt 80%.\n'
+                      '• Duy trì lịch học 20 phút mỗi ngày.',
+                      style: TextStyle(height: 1.5),
+                    ),
                   ],
                 ),
               ),
