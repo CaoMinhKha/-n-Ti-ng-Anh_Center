@@ -2,8 +2,9 @@
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Vary: Origin');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -77,7 +78,7 @@ $routes = [
     'cauhoi' => ['GET', 'POST', 'PUT', 'DELETE'],
     'dapan' => ['GET', 'POST', 'PUT', 'DELETE'],
     'baikiemtra' => ['GET', 'POST', 'PUT', 'DELETE'],
-    'dangkylop' => ['GET', 'POST', 'DELETE'],
+    'dangkylop' => ['GET', 'POST', 'PUT', 'DELETE'],
     'chuyencan' => ['GET', 'POST', 'PUT', 'DELETE'],
     'tiendohoc' => ['GET', 'POST', 'PUT'],
     'danhgia' => ['GET', 'POST', 'PUT', 'DELETE'],
@@ -202,12 +203,18 @@ function handleLogin($input) {
                 'sub' => $row['MaQuanTriVien'] ?? $row['MaGiaoVien'] ?? $row['MaHocVien'] ?? 0,
                 'role' => $user['role'],
                 'type' => $user['table'],
-                'exp' => time() + 3600
+                'exp' => time() + 3600,
+                'username' => $row['TenDangNhap'] ?? ''
             ];
             $token = createJWT($payload);
             $stmt->close();
             $conn->close();
-            return ['status' => true, 'message' => 'Đăng nhập thành công', 'token' => $token, 'data' => $row];
+            return ['status' => true, 'message' => 'Đăng nhập thành công', 'token' => $token, 'data' => $row, 'user' => [
+                'id' => $row['MaQuanTriVien'] ?? $row['MaGiaoVien'] ?? $row['MaHocVien'] ?? 0,
+                'role' => $user['role'],
+                'type' => $user['table'],
+                'name' => $row['HoTen'] ?? $row['TenDangNhap'] ?? '',
+            ]];
         }
         $stmt->close();
     }
@@ -253,19 +260,34 @@ function handleStudents($method, $input) {
         return ['status' => true, 'message' => 'Tạo học viên thành công', 'id' => $newId];
     }
     if ($method === 'PUT' && $id) {
-        $stmt = $conn->prepare('UPDATE HocVien SET TenDangNhap = ?, MatKhau = ?, HoTen = ?, Email = ?, NgaySinh = ?, GioiTinh = ?, TrangThai = ?, SoDienThoai = ?, DiaChi = ? WHERE MaHocVien = ?');
-        $stmt->bind_param('ssssssissi',
-            $input['TenDangNhap'] ?? '',
-            $input['MatKhau'] ?? '',
-            $input['HoTen'] ?? '',
-            $input['Email'] ?? '',
-            $input['NgaySinh'] ?? null,
-            $input['GioiTinh'] ?? 0,
-            $input['TrangThai'] ?? 1,
-            $input['SoDienThoai'] ?? null,
-            $input['DiaChi'] ?? null,
-            $id
-        );
+        if (!isset($input['MatKhau']) || trim((string)($input['MatKhau'] ?? '')) === '') {
+            $stmt = $conn->prepare('UPDATE HocVien SET TenDangNhap = ?, HoTen = ?, Email = ?, NgaySinh = ?, GioiTinh = ?, TrangThai = ?, SoDienThoai = ?, DiaChi = ? WHERE MaHocVien = ?');
+            $stmt->bind_param('ssssiissi',
+                $input['TenDangNhap'] ?? '',
+                $input['HoTen'] ?? '',
+                $input['Email'] ?? '',
+                $input['NgaySinh'] ?? null,
+                $input['GioiTinh'] ?? 0,
+                $input['TrangThai'] ?? 1,
+                $input['SoDienThoai'] ?? null,
+                $input['DiaChi'] ?? null,
+                $id
+            );
+        } else {
+            $stmt = $conn->prepare('UPDATE HocVien SET TenDangNhap = ?, MatKhau = ?, HoTen = ?, Email = ?, NgaySinh = ?, GioiTinh = ?, TrangThai = ?, SoDienThoai = ?, DiaChi = ? WHERE MaHocVien = ?');
+            $stmt->bind_param('ssssssissi',
+                $input['TenDangNhap'] ?? '',
+                $input['MatKhau'] ?? '',
+                $input['HoTen'] ?? '',
+                $input['Email'] ?? '',
+                $input['NgaySinh'] ?? null,
+                $input['GioiTinh'] ?? 0,
+                $input['TrangThai'] ?? 1,
+                $input['SoDienThoai'] ?? null,
+                $input['DiaChi'] ?? null,
+                $id
+            );
+        }
         $stmt->execute();
         $stmt->close();
         $conn->close();
@@ -321,19 +343,34 @@ function handleTeachers($method, $input) {
         return ['status' => true, 'message' => 'Tạo giáo viên thành công', 'id' => $newId];
     }
     if ($method === 'PUT' && $id) {
-        $stmt = $conn->prepare('UPDATE GiaoVien SET TenDangNhap = ?, MatKhau = ?, HoTen = ?, Email = ?, NgaySinh = ?, GioiTinh = ?, TrangThai = ?, SoDienThoai = ?, DiaChi = ? WHERE MaGiaoVien = ?');
-        $stmt->bind_param('ssssssissi',
-            $input['TenDangNhap'] ?? '',
-            $input['MatKhau'] ?? '',
-            $input['HoTen'] ?? '',
-            $input['Email'] ?? '',
-            $input['NgaySinh'] ?? null,
-            $input['GioiTinh'] ?? 0,
-            $input['TrangThai'] ?? 1,
-            $input['SoDienThoai'] ?? null,
-            $input['DiaChi'] ?? null,
-            $id
-        );
+        if (!isset($input['MatKhau']) || trim((string)($input['MatKhau'] ?? '')) === '') {
+            $stmt = $conn->prepare('UPDATE GiaoVien SET TenDangNhap = ?, HoTen = ?, Email = ?, NgaySinh = ?, GioiTinh = ?, TrangThai = ?, SoDienThoai = ?, DiaChi = ? WHERE MaGiaoVien = ?');
+            $stmt->bind_param('ssssiissi',
+                $input['TenDangNhap'] ?? '',
+                $input['HoTen'] ?? '',
+                $input['Email'] ?? '',
+                $input['NgaySinh'] ?? null,
+                $input['GioiTinh'] ?? 0,
+                $input['TrangThai'] ?? 1,
+                $input['SoDienThoai'] ?? null,
+                $input['DiaChi'] ?? null,
+                $id
+            );
+        } else {
+            $stmt = $conn->prepare('UPDATE GiaoVien SET TenDangNhap = ?, MatKhau = ?, HoTen = ?, Email = ?, NgaySinh = ?, GioiTinh = ?, TrangThai = ?, SoDienThoai = ?, DiaChi = ? WHERE MaGiaoVien = ?');
+            $stmt->bind_param('ssssssissi',
+                $input['TenDangNhap'] ?? '',
+                $input['MatKhau'] ?? '',
+                $input['HoTen'] ?? '',
+                $input['Email'] ?? '',
+                $input['NgaySinh'] ?? null,
+                $input['GioiTinh'] ?? 0,
+                $input['TrangThai'] ?? 1,
+                $input['SoDienThoai'] ?? null,
+                $input['DiaChi'] ?? null,
+                $id
+            );
+        }
         $stmt->execute();
         $stmt->close();
         $conn->close();
@@ -389,16 +426,28 @@ function handleAdmins($method, $input) {
         return ['status' => true, 'message' => 'Tạo quản trị viên thành công', 'id' => $newId];
     }
     if ($method === 'PUT' && $id) {
-        $stmt = $conn->prepare('UPDATE QuanTriVien SET TenDangNhap = ?, MatKhau = ?, HoTen = ?, Email = ?, PhanQuyen = ?, TrangThai = ? WHERE MaQuanTriVien = ?');
-        $stmt->bind_param('ssssssi',
-            $input['TenDangNhap'] ?? '',
-            $input['MatKhau'] ?? '',
-            $input['HoTen'] ?? '',
-            $input['Email'] ?? null,
-            $input['PhanQuyen'] ?? 'admin',
-            $input['TrangThai'] ?? 1,
-            $id
-        );
+        if (!isset($input['MatKhau']) || trim((string)($input['MatKhau'] ?? '')) === '') {
+            $stmt = $conn->prepare('UPDATE QuanTriVien SET TenDangNhap = ?, HoTen = ?, Email = ?, PhanQuyen = ?, TrangThai = ? WHERE MaQuanTriVien = ?');
+            $stmt->bind_param('sssssi',
+                $input['TenDangNhap'] ?? '',
+                $input['HoTen'] ?? '',
+                $input['Email'] ?? null,
+                $input['PhanQuyen'] ?? 'admin',
+                $input['TrangThai'] ?? 1,
+                $id
+            );
+        } else {
+            $stmt = $conn->prepare('UPDATE QuanTriVien SET TenDangNhap = ?, MatKhau = ?, HoTen = ?, Email = ?, PhanQuyen = ?, TrangThai = ? WHERE MaQuanTriVien = ?');
+            $stmt->bind_param('ssssssi',
+                $input['TenDangNhap'] ?? '',
+                $input['MatKhau'] ?? '',
+                $input['HoTen'] ?? '',
+                $input['Email'] ?? null,
+                $input['PhanQuyen'] ?? 'admin',
+                $input['TrangThai'] ?? 1,
+                $id
+            );
+        }
         $stmt->execute();
         $stmt->close();
         $conn->close();
@@ -487,12 +536,45 @@ function handleClasses($method, $input) {
             $stmt->bind_param('i', $id);
             $stmt->execute();
             $data = $stmt->get_result()->fetch_assoc();
+            
+            if ($data) {
+                // Lấy lịch học
+                $scheduleStmt = $conn->prepare('SELECT * FROM lichhoc WHERE MaLop = ? ORDER BY ThuHoc, Buoi');
+                $scheduleStmt->bind_param('i', $id);
+                $scheduleStmt->execute();
+                $data['LichHoc'] = $scheduleStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+                $scheduleStmt->close();
+                
+                // Đếm số chỗ đã đăng ký
+                $countStmt = $conn->prepare('SELECT COUNT(*) as SoLuongDaDangKy FROM dangkylop WHERE MaLop = ? AND TrangThai IN ("approved", "pending")');
+                $countStmt->bind_param('i', $id);
+                $countStmt->execute();
+                $countResult = $countStmt->get_result()->fetch_assoc();
+                $data['SoLuongDaDangKy'] = (int)($countResult['SoLuongDaDangKy'] ?? 0);
+                $data['SoChoConLai'] = max(0, ($data['SoLuongToiDa'] ?? 0) - $data['SoLuongDaDangKy']);
+                $countStmt->close();
+            }
+            
             $stmt->close();
             $conn->close();
             return ['status' => true, 'data' => $data ?: null];
         }
-        $result = $conn->query('SELECT * FROM LopHoc');
+        $result = $conn->query('SELECT l.*, COUNT(d.MaDangKy) as SoLuongDaDangKy FROM LopHoc l LEFT JOIN dangkylop d ON l.MaLop = d.MaLop AND d.TrangThai IN ("approved", "pending") GROUP BY l.MaLop');
         $rows = $result->fetch_all(MYSQLI_ASSOC);
+        
+        // Lấy lịch học cho mỗi lớp và tính số chỗ còn lại
+        foreach ($rows as &$row) {
+            $maLop = $row['MaLop'];
+            $scheduleStmt = $conn->prepare('SELECT * FROM lichhoc WHERE MaLop = ? ORDER BY ThuHoc, Buoi');
+            $scheduleStmt->bind_param('i', $maLop);
+            $scheduleStmt->execute();
+            $row['LichHoc'] = $scheduleStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            $scheduleStmt->close();
+            
+            $row['SoLuongDaDangKy'] = (int)($row['SoLuongDaDangKy'] ?? 0);
+            $row['SoChoConLai'] = max(0, ($row['SoLuongToiDa'] ?? 0) - $row['SoLuongDaDangKy']);
+        }
+        
         $conn->close();
         return ['status' => true, 'data' => $rows];
     }
@@ -513,7 +595,7 @@ function handleClasses($method, $input) {
     }
     if ($method === 'PUT' && $id) {
         $stmt = $conn->prepare('UPDATE LopHoc SET TenLop = ?, MaKhoaHoc = ?, MaGiaoVien = ?, SoLuongToiDa = ?, TrangThai = ? WHERE MaLop = ?');
-        $stmt->bind_param('siiii',
+        $stmt->bind_param('siiiii',
             $input['TenLop'] ?? '',
             $input['MaKhoaHoc'] ?? 0,
             $input['MaGiaoVien'] ?? 0,
@@ -542,17 +624,40 @@ function handleLessons($method, $input) {
     $conn = getDbConnection();
     $id = getIdParam();
     if ($method === 'GET') {
+        $includeFull = isset($_GET['include']) && $_GET['include'] === 'full';
+        $slug = trim((string)($_GET['slug'] ?? ''));
+
         if ($id) {
             $stmt = $conn->prepare('SELECT * FROM BaiHoc WHERE MaBaiHoc = ?');
             $stmt->bind_param('i', $id);
             $stmt->execute();
             $data = $stmt->get_result()->fetch_assoc();
+            if ($data && $includeFull) {
+                $data['CauHoi'] = fetchLessonQuestions($conn, $id);
+                $videoData = getLessonVideoData($id);
+                if ($videoData) {
+                    $data['VideoUrl'] = $videoData['VideoUrl'];
+                    $data['VideoTitle'] = $videoData['VideoTitle'];
+                    $data['VideoDescription'] = $videoData['VideoDescription'];
+                }
+            }
             $stmt->close();
             $conn->close();
             return ['status' => true, 'data' => $data ?: null];
         }
         $result = $conn->query('SELECT * FROM BaiHoc');
         $rows = $result->fetch_all(MYSQLI_ASSOC);
+        foreach ($rows as &$row) {
+            if ($includeFull || $slug === 'video') {
+                $row['CauHoi'] = fetchLessonQuestions($conn, $row['MaBaiHoc']);
+                $videoData = getLessonVideoData($row['MaBaiHoc']);
+                if ($videoData) {
+                    $row['VideoUrl'] = $videoData['VideoUrl'];
+                    $row['VideoTitle'] = $videoData['VideoTitle'];
+                    $row['VideoDescription'] = $videoData['VideoDescription'];
+                }
+            }
+        }
         $conn->close();
         return ['status' => true, 'data' => $rows];
     }
@@ -596,6 +701,88 @@ function handleLessons($method, $input) {
     return ['status' => false, 'message' => 'Yêu cầu bài học không hợp lệ'];
 }
 
+function fetchLessonQuestions($conn, $lessonId) {
+    $questions = [];
+    $stmt = $conn->prepare('SELECT * FROM CauHoi WHERE MaBaiHoc = ? ORDER BY ThuTu');
+    $stmt->bind_param('i', $lessonId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    while ($question = $result->fetch_assoc()) {
+        $question['DapAn'] = fetchQuestionAnswers($conn, $question['MaCauHoi']);
+        $questions[] = $question;
+    }
+    $stmt->close();
+    return $questions;
+}
+
+function fetchQuestionAnswers($conn, $questionId) {
+    $stmt = $conn->prepare('SELECT * FROM DapAn WHERE MaCauHoi = ?');
+    $stmt->bind_param('i', $questionId);
+    $stmt->execute();
+    $answers = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+    return $answers;
+}
+
+function enrichQuestionWithAnswers($conn, $question) {
+    if (!$question) {
+        return $question;
+    }
+    $question['DapAn'] = fetchQuestionAnswers($conn, $question['MaCauHoi']);
+    return $question;
+}
+
+function saveQuestionAnswers($conn, $questionId, $answers) {
+    $deleteStmt = $conn->prepare('DELETE FROM DapAn WHERE MaCauHoi = ?');
+    $deleteStmt->bind_param('i', $questionId);
+    $deleteStmt->execute();
+    $deleteStmt->close();
+
+    if (!is_array($answers)) {
+        if (is_string($answers) && trim($answers) !== '') {
+            $answers = [['NoiDung' => trim($answers), 'LaDapAnDung' => 1]];
+        } else {
+            return;
+        }
+    }
+
+    foreach ($answers as $answer) {
+        if (!is_array($answer)) {
+            continue;
+        }
+        $text = trim((string)($answer['NoiDung'] ?? $answer['text'] ?? ''));
+        if ($text === '') {
+            continue;
+        }
+        $correct = isset($answer['LaDapAnDung']) ? (int)((bool)$answer['LaDapAnDung']) : (isset($answer['isCorrect']) ? (int)((bool)$answer['isCorrect']) : 0);
+        $stmt = $conn->prepare('INSERT INTO DapAn (MaCauHoi, NoiDung, LaDapAnDung) VALUES (?, ?, ?)');
+        $stmt->bind_param('isi', $questionId, $text, $correct);
+        $stmt->execute();
+        $stmt->close();
+    }
+}
+
+function getLessonVideoData($lessonId) {
+    $videos = [
+        1 => [
+            'VideoUrl' => 'https://englishcenter.caothang.edu.vn/videos/Gioi-thieu-khoa-hoc-OFFLINE-TAI-TRUONG-Anh-van-1-2-3.html',
+            'VideoTitle' => 'Giới thiệu khóa học tiếng Anh cơ bản',
+            'VideoDescription' => 'Video giới thiệu bài học và chương trình đào tạo.',
+        ],
+        2 => [
+            'VideoUrl' => 'https://englishcenter.caothang.edu.vn/videos/English-Job-Interview-Tips-and-Tricks.html',
+            'VideoTitle' => 'Tips phỏng vấn tiếng Anh',
+            'VideoDescription' => 'Video luyện kỹ năng nói tiếng Anh qua phỏng vấn.',
+        ],
+        3 => [
+            'VideoUrl' => 'https://englishcenter.caothang.edu.vn/videos/18-tu-ban-Viet-nao-cung-phat-am-sai.html',
+            'VideoTitle' => 'Phát âm 18 từ tiếng Anh dễ sai',
+            'VideoDescription' => 'Video hướng dẫn phát âm chuẩn tiếng Anh.',
+        ]
+    ];
+    return $videos[$lessonId] ?? null;
+}
+
 function handleQuestions($method, $input) {
     $conn = getDbConnection();
     $id = getIdParam();
@@ -606,11 +793,17 @@ function handleQuestions($method, $input) {
             $stmt->execute();
             $data = $stmt->get_result()->fetch_assoc();
             $stmt->close();
+            if ($data) {
+                $data = enrichQuestionWithAnswers($conn, $data);
+            }
             $conn->close();
             return ['status' => true, 'data' => $data ?: null];
         }
-        $result = $conn->query('SELECT * FROM CauHoi');
+        $result = $conn->query('SELECT * FROM CauHoi ORDER BY ThuTu, MaCauHoi');
         $rows = $result->fetch_all(MYSQLI_ASSOC);
+        foreach ($rows as &$row) {
+            $row = enrichQuestionWithAnswers($conn, $row);
+        }
         $conn->close();
         return ['status' => true, 'data' => $rows];
     }
@@ -619,12 +812,15 @@ function handleQuestions($method, $input) {
         $stmt->bind_param('issi',
             $input['MaBaiHoc'] ?? 0,
             $input['NoiDung'] ?? '',
-            $input['LoaiCauHoi'] ?? '',
+            $input['LoaiCauHoi'] ?? $input['Loai'] ?? '',
             $input['ThuTu'] ?? 0
         );
         $stmt->execute();
         $newId = $stmt->insert_id;
         $stmt->close();
+        if (array_key_exists('DapAn', $input)) {
+            saveQuestionAnswers($conn, $newId, $input['DapAn']);
+        }
         $conn->close();
         return ['status' => true, 'message' => 'Tạo câu hỏi thành công', 'id' => $newId];
     }
@@ -633,16 +829,24 @@ function handleQuestions($method, $input) {
         $stmt->bind_param('issii',
             $input['MaBaiHoc'] ?? 0,
             $input['NoiDung'] ?? '',
-            $input['LoaiCauHoi'] ?? '',
+            $input['LoaiCauHoi'] ?? $input['Loai'] ?? '',
             $input['ThuTu'] ?? 0,
             $id
         );
         $stmt->execute();
         $stmt->close();
+        if (array_key_exists('DapAn', $input)) {
+            saveQuestionAnswers($conn, $id, $input['DapAn']);
+        }
         $conn->close();
         return ['status' => true, 'message' => 'Cập nhật câu hỏi thành công'];
     }
     if ($method === 'DELETE' && $id) {
+        $deleteAnswers = $conn->prepare('DELETE FROM DapAn WHERE MaCauHoi = ?');
+        $deleteAnswers->bind_param('i', $id);
+        $deleteAnswers->execute();
+        $deleteAnswers->close();
+
         $stmt = $conn->prepare('DELETE FROM CauHoi WHERE MaCauHoi = ?');
         $stmt->bind_param('i', $id);
         $stmt->execute();
@@ -799,6 +1003,20 @@ function handleEnrollments($method, $input) {
         $stmt->close();
         $conn->close();
         return ['status' => true, 'message' => 'Đăng ký lớp thành công', 'id' => $newId];
+    }
+    if ($method === 'PUT' && $id) {
+        $stmt = $conn->prepare('UPDATE DangKyLop SET MaHocVien = ?, MaLop = ?, NgayDangKy = ?, TrangThai = ? WHERE MaDangKy = ?');
+        $stmt->bind_param('iissi',
+            $input['MaHocVien'] ?? 0,
+            $input['MaLop'] ?? 0,
+            $input['NgayDangKy'] ?? null,
+            $input['TrangThai'] ?? '',
+            $id
+        );
+        $stmt->execute();
+        $stmt->close();
+        $conn->close();
+        return ['status' => true, 'message' => 'Cập nhật đăng ký thành công'];
     }
     if ($method === 'DELETE' && $id) {
         $stmt = $conn->prepare('DELETE FROM DangKyLop WHERE MaDangKy = ?');
