@@ -1,0 +1,390 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "API Trung tâm Anh ngữ",
+    "version": "1.0.0",
+    "description": "Tài liệu Swagger cho API PHP quản lý trung tâm anh ngữ với các endpoint tiếng Việt"
+  },
+  "servers": [
+    {
+      "url": ".",
+      "description": "Thư mục api hiện tại"
+    }
+  ],
+  "paths": {
+    "/index.php": {
+      "get": {
+        "summary": "Lấy dữ liệu",
+        "description": "Lấy dữ liệu theo endpoint tiếng Việt và tùy chọn id",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["hocvien","giaovien","khoahoc","lophoc","baihoc","cauhoi","dapan","baikiemtra","dangkylop","chuyencan","tiendohoc","danhgia","baocao","elearning","dictionary"]
+            }
+          },
+          {
+            "name": "word",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Từ cần tra cứu khi request=dictionary"
+          },
+          {
+            "name": "slug",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["nghe","noi","doc","viet","video","phatam"]
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["full"]
+            },
+            "description": "Sử dụng include=full để trả về nội dung bài học đầy đủ, bao gồm câu hỏi, đáp án và video học tập."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dữ liệu trả về",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Tạo hoặc đăng nhập",
+        "description": "Tạo mới bản ghi hoặc đăng nhập qua endpoint tiếng Việt",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["dangnhap","hocvien","giaovien","khoahoc","lophoc","baihoc","cauhoi","dapan","baikiemtra","dangkylop","chuyencan","tiendohoc","danhgia"]
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  { "$ref": "#/components/schemas/Login" },
+                  { "$ref": "#/components/schemas/HocVien" },
+                  { "$ref": "#/components/schemas/GiaoVien" },
+                  { "$ref": "#/components/schemas/KhoaHoc" },
+                  { "$ref": "#/components/schemas/LopHoc" },
+                  { "$ref": "#/components/schemas/BaiHoc" },
+                  { "$ref": "#/components/schemas/CauHoi" },
+                  { "$ref": "#/components/schemas/DapAn" },
+                  { "$ref": "#/components/schemas/BaiKiemTra" },
+                  { "$ref": "#/components/schemas/DangKyLop" },
+                  { "$ref": "#/components/schemas/ChuyenCan" },
+                  { "$ref": "#/components/schemas/TienDoHocTap" },
+                  { "$ref": "#/components/schemas/DanhGia" }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Kết quả hành động",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Cập nhật bản ghi",
+        "description": "Cập nhật bản ghi theo endpoint tiếng Việt và id",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["hocvien","giaovien","khoahoc","lophoc","baihoc","cauhoi","dapan","baikiemtra","chuyencan","tiendohoc","danhgia"]
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  { "$ref": "#/components/schemas/HocVien" },
+                  { "$ref": "#/components/schemas/GiaoVien" },
+                  { "$ref": "#/components/schemas/KhoaHoc" },
+                  { "$ref": "#/components/schemas/LopHoc" },
+                  { "$ref": "#/components/schemas/BaiHoc" },
+                  { "$ref": "#/components/schemas/CauHoi" },
+                  { "$ref": "#/components/schemas/DapAn" },
+                  { "$ref": "#/components/schemas/BaiKiemTra" },
+                  { "$ref": "#/components/schemas/ChuyenCan" },
+                  { "$ref": "#/components/schemas/TienDoHocTap" },
+                  { "$ref": "#/components/schemas/DanhGia" }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Kết quả cập nhật",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Xóa bản ghi",
+        "description": "Xóa bản ghi theo endpoint tiếng Việt và id",
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["hocvien","giaovien","khoahoc","lophoc","baihoc","cauhoi","dapan","baikiemtra","dangkylop","chuyencan","danhgia"]
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Kết quả xóa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Login": {
+        "type": "object",
+        "properties": {
+          "username": { "type": "string" },
+          "password": { "type": "string" }
+        },
+        "required": ["username", "password"]
+      },
+      "HocVien": {
+        "type": "object",
+        "properties": {
+          "TenDangNhap": { "type": "string" },
+          "MatKhau": { "type": "string" },
+          "HoTen": { "type": "string" },
+          "Email": { "type": "string", "format": "email" },
+          "NgaySinh": { "type": "string", "format": "date" },
+          "GioiTinh": { "type": "integer", "enum": [0,1] },
+          "TrangThai": { "type": "integer", "enum": [0,1] },
+          "SoDienThoai": { "type": "string" },
+          "DiaChi": { "type": "string" }
+        }
+      },
+      "GiaoVien": {
+        "type": "object",
+        "properties": {
+          "TenDangNhap": { "type": "string" },
+          "MatKhau": { "type": "string" },
+          "HoTen": { "type": "string" },
+          "Email": { "type": "string", "format": "email" },
+          "NgaySinh": { "type": "string", "format": "date" },
+          "GioiTinh": { "type": "integer", "enum": [0,1] },
+          "TrangThai": { "type": "integer", "enum": [0,1] },
+          "SoDienThoai": { "type": "string" },
+          "DiaChi": { "type": "string" }
+        }
+      },
+      "KhoaHoc": {
+        "type": "object",
+        "properties": {
+          "TenKhoaHoc": { "type": "string" },
+          "TrinhDo": { "type": "string" },
+          "MoTa": { "type": "string" },
+          "NgayBatDau": { "type": "string", "format": "date" },
+          "NgayKetThuc": { "type": "string", "format": "date" },
+          "TrangThai": { "type": "string" }
+        }
+      },
+      "LopHoc": {
+        "type": "object",
+        "properties": {
+          "TenLop": { "type": "string" },
+          "MaKhoaHoc": { "type": "integer" },
+          "MaGiaoVien": { "type": "integer" },
+          "SoLuongToiDa": { "type": "integer" },
+          "TrangThai": { "type": "string" }
+        }
+      },
+      "BaiHoc": {
+        "type": "object",
+        "properties": {
+          "TieuDe": { "type": "string" },
+          "NoiDung": { "type": "string" },
+          "ThuTu": { "type": "integer" },
+          "MaKhoaHoc": { "type": "integer" },
+          "VideoUrl": { "type": "string", "format": "uri" },
+          "VideoTitle": { "type": "string" },
+          "VideoDescription": { "type": "string" },
+          "CauHoi": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CauHoi"
+            }
+          }
+        }
+      },
+      "CauHoi": {
+        "type": "object",
+        "properties": {
+          "MaBaiHoc": { "type": "integer" },
+          "NoiDung": { "type": "string" },
+          "LoaiCauHoi": { "type": "string" },
+          "ThuTu": { "type": "integer" },
+          "DapAn": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DapAn"
+            }
+          }
+        }
+      },
+      "DapAn": {
+        "type": "object",
+        "properties": {
+          "MaCauHoi": { "type": "integer" },
+          "NoiDung": { "type": "string" },
+          "LaDapAnDung": { "type": "integer", "enum": [0,1] }
+        }
+      },
+      "BaiKiemTra": {
+        "type": "object",
+        "properties": {
+          "MaLop": { "type": "integer" },
+          "TenBaiKiemTra": { "type": "string" },
+          "ThoiGianLam": { "type": "integer" },
+          "DiemDat": { "type": "number" }
+        }
+      },
+      "DangKyLop": {
+        "type": "object",
+        "properties": {
+          "MaHocVien": { "type": "integer" },
+          "MaLop": { "type": "integer" },
+          "NgayDangKy": { "type": "string", "format": "date" },
+          "TrangThai": { "type": "string" }
+        }
+      },
+      "ChuyenCan": {
+        "type": "object",
+        "properties": {
+          "MaHocVien": { "type": "integer" },
+          "MaLop": { "type": "integer" },
+          "NgayDiem": { "type": "string", "format": "date" },
+          "TrangThai": { "type": "string" },
+          "GhiChu": { "type": "string" }
+        }
+      },
+      "TienDoHocTap": {
+        "type": "object",
+        "properties": {
+          "MaHocVien": { "type": "integer" },
+          "MaBaiHoc": { "type": "integer" },
+          "PhanTramHoanThanh": { "type": "number" },
+          "NgayCapNhat": { "type": "string", "format": "date" }
+        }
+      },
+      "DanhGia": {
+        "type": "object",
+        "properties": {
+          "MaHocVien": { "type": "integer" },
+          "MaGiaoVien": { "type": "integer" },
+          "DiemDanhGia": { "type": "number" },
+          "NhanXet": { "type": "string" },
+          "NgayDanhGia": { "type": "string", "format": "date" }
+        }
+      }
+    }
+  }
+}
