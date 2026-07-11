@@ -40,30 +40,38 @@ class _TeacherStudentListScreenState extends State<TeacherStudentListScreen> {
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: loadStudents,
-              child: ListView.builder(
-                padding: const EdgeInsets.all(12),
-                itemCount: students.length,
-                itemBuilder: (context, index) {
-                  final student = students[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Colors.orange.shade50,
-                        child: const Icon(Icons.person, color: Colors.orange),
-                      ),
-                      title: Text(student['HoTen']?.toString() ?? 'Không tên', style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 4),
-                          Text('Tài khoản: ${student['TenDangNhap'] ?? ''}'),
-                          Text('Email: ${student['Email'] ?? 'Chưa có'}'),
-                          Text('Trạng thái: ${student['TrangThai'] ?? 'Đang theo dõi'}'),
-                        ],
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    child: ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(12),
+                      itemCount: students.length,
+                      itemBuilder: (context, index) {
+                        final student = students[index];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: Colors.orange.shade50,
+                              child: const Icon(Icons.person, color: Colors.orange),
+                            ),
+                            title: Text(student['HoTen']?.toString() ?? 'Không tên', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 4),
+                                Text('Tài khoản: ${student['TenDangNhap'] ?? ''}'),
+                                Text('Email: ${student['Email'] ?? 'Chưa có'}'),
+                                Text('Trạng thái: ${student['TrangThai'] ?? 'Đang theo dõi'}'),
+                              ],
+                            ),
+                            trailing: const Icon(Icons.chevron_right),
+                          ),
+                        );
+                      },
                     ),
                   );
                 },

@@ -113,7 +113,7 @@
                 "$ref": "#/components/schemas/Login"
               },
               "example": {
-                "username": "hv01",
+                "username": "kha",
                 "password": "123456"
               }
             }

@@ -34,16 +34,25 @@ class _AdminStudentScreenState extends State<AdminStudentScreen> {
       appBar: AppBar(title: const Text('Danh sách học viên')),
       body: loading
           ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: students.length,
-              itemBuilder: (context, index) {
-                final student = students[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: ListTile(
-                    title: Text(student['HoTen']?.toString() ?? 'Không tên'),
-                    subtitle: Text('Tài khoản: ${student['TenDangNhap'] ?? ''}'),
-                    trailing: Text('Trạng thái: ${student['TrangThai'] ?? ''}'),
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                return ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    itemCount: students.length,
+                    itemBuilder: (context, index) {
+                      final student = students[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          title: Text(student['HoTen']?.toString() ?? 'Không tên'),
+                          subtitle: Text('Tài khoản: ${student['TenDangNhap'] ?? ''}'),
+                          trailing: Text('Trạng thái: ${student['TrangThai'] ?? ''}'),
+                        ),
+                      );
+                    },
                   ),
                 );
               },

@@ -4,7 +4,10 @@ import '../../dich_vu/dich_vu_dang_ky_hoc_vien.dart';
 import '../../tien_ich/phien_lam_viec_nguoi_dung.dart';
 
 class RegisterClassScreen extends StatefulWidget {
-  const RegisterClassScreen({super.key});
+  final int? maKhoaHoc;
+  final String? courseName;
+
+  const RegisterClassScreen({super.key, this.maKhoaHoc, this.courseName});
 
   @override
   State<RegisterClassScreen> createState() => _RegisterClassScreenState();
@@ -23,9 +26,16 @@ class _RegisterClassScreenState extends State<RegisterClassScreen> {
   Future<void> loadClasses() async {
     final token = await UserSession.getToken();
     final data = await ClassService.getClasses(token: token);
+    final filtered = widget.maKhoaHoc != null
+        ? data.where((item) {
+            final maKhoaHocValue = item['MaKhoaHoc'];
+            if (maKhoaHocValue == null) return false;
+            return maKhoaHocValue.toString() == widget.maKhoaHoc.toString();
+          }).toList()
+        : data;
     if (mounted) {
       setState(() {
-        classes = data;
+        classes = filtered;
         loading = false;
       });
     }
@@ -63,7 +73,9 @@ class _RegisterClassScreenState extends State<RegisterClassScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Đăng ký lớp học')),
+      appBar: AppBar(title: Text(widget.courseName != null && widget.courseName!.isNotEmpty
+          ? 'Lớp của ${widget.courseName}'
+          : 'Đăng ký lớp học')),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : classes.isEmpty

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../dich_vu/dich_vu_khoa_hoc.dart';
 import '../../dich_vu/dich_vu_dang_ky_khoa_hoc.dart';
+import '../../thanh_phan/thanh_menu.dart';
 import '../../tien_ich/phien_lam_viec_nguoi_dung.dart';
+import '../shared/course_list_view.dart';
 import 'giao_dien_dang_ky_lop.dart';
 
 class StudentCourseScreen extends StatefulWidget {
@@ -72,58 +74,24 @@ class _StudentCourseScreenState extends State<StudentCourseScreen> {
         icon: const Icon(Icons.calendar_today),
         label: const Text('Đăng ký lớp'),
       ),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: courses.length,
-              itemBuilder: (context, index) {
-                final item = courses[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item['TenKhoaHoc']?.toString() ?? 'Không tên',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 6),
-                        Text('Trình độ: ${item['TrinhDo'] ?? ''}'),
-                        const SizedBox(height: 6),
-                        Text('Mô tả: ${item['MoTa'] ?? 'Khóa học phù hợp cho người mới bắt đầu.'}'),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed: () async {
-                                  await registerCourse(int.parse(item['MaKhoaHoc'].toString()));
-                                },
-                                child: const Text('Đăng ký khóa'),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => const RegisterClassScreen()),
-                                  );
-                                },
-                                child: const Text('Chọn lớp'),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+      body: CourseListView(
+        loading: loading,
+        courses: courses,
+        onRegisterCourse: (maKhoaHoc) async {
+          await registerCourse(maKhoaHoc);
+        },
+        onChooseClass: (course) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => RegisterClassScreen(
+                maKhoaHoc: int.parse(course['MaKhoaHoc'].toString()),
+                courseName: course['TenKhoaHoc']?.toString() ?? '',
+              ),
             ),
+          );
+        },
+      ),
     );
   }
 }

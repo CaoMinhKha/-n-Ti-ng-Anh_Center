@@ -12,6 +12,8 @@ class LessonDragMatchScreen extends StatefulWidget {
 }
 
 class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
+  static const String _fallbackVideoUrl = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+
   bool _isLoadingRole = true;
   bool _isVideoLoading = false;
   String? _videoError;
@@ -36,12 +38,58 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
   ];
 
   int _selectedLessonIndex = 11;
+  List<String> _answers = [];
+  List<String?> _selectedAnswers = [];
+  bool _submitted = false;
+  List<_SentenceData> _sentences = [];
+
+  final Map<String, List<_SentenceData>> _lessonExerciseLibrary = {
+    'Lesson 1A.0: Introduction': [
+      _SentenceData(parts: ['Hello, my name ', ' ', '.'], correctAnswer: 'is', targetIndex: 0),
+      _SentenceData(parts: ['I ', ' ', ' from Hanoi.'], correctAnswer: 'am', targetIndex: 1),
+      _SentenceData(parts: ['Nice to ', ' ', ' you.'], correctAnswer: 'meet', targetIndex: 2),
+      _SentenceData(parts: ['How ', ' ', ' you today?'], correctAnswer: 'are', targetIndex: 3),
+    ],
+    'Lesson 1A.1: Reading': [
+      _SentenceData(parts: ['She ', ' ', ' a book every night.'], correctAnswer: 'reads', targetIndex: 0),
+      _SentenceData(parts: ['They ', ' ', ' in the park.'], correctAnswer: 'play', targetIndex: 1),
+      _SentenceData(parts: ['We ', ' ', ' to the teacher.'], correctAnswer: 'listen', targetIndex: 2),
+      _SentenceData(parts: ['It ', ' ', ' sunny today.'], correctAnswer: 'is', targetIndex: 3),
+    ],
+    'Lesson 1A.2: Post - Reading': [
+      _SentenceData(parts: ['I ', ' ', ' a letter yesterday.'], correctAnswer: 'wrote', targetIndex: 0),
+      _SentenceData(parts: ['He ', ' ', ' his homework.'], correctAnswer: 'finished', targetIndex: 1),
+      _SentenceData(parts: ['We ', ' ', ' lunch at noon.'], correctAnswer: 'had', targetIndex: 2),
+      _SentenceData(parts: ['They ', ' ', ' to the store.'], correctAnswer: 'went', targetIndex: 3),
+    ],
+    'Lesson 1A.3: Listening A': [
+      _SentenceData(parts: ['I ', ' ', ' music every morning.'], correctAnswer: 'listen to', targetIndex: 0),
+      _SentenceData(parts: ['She ', ' ', ' the teacher carefully.'], correctAnswer: 'heard', targetIndex: 1),
+      _SentenceData(parts: ['We ', ' ', ' the announcement.'], correctAnswer: 'understood', targetIndex: 2),
+      _SentenceData(parts: ['They ', ' ', ' a story.'], correctAnswer: 'listened to', targetIndex: 3),
+    ],
+    'default': [
+      _SentenceData(parts: ['The accident ', ' ', ' place while I ', ' ', ' a driving lesson.'], correctAnswer: 'took', targetIndex: 0),
+      _SentenceData(parts: ['The accident ', ' ', ' place while I ', ' ', ' a driving lesson.'], correctAnswer: 'was having', targetIndex: 1),
+      _SentenceData(parts: ['Last night they ', ' ', ' in bed when they ', ' ', ' a strange noise.'], correctAnswer: 'were trying', targetIndex: 2),
+      _SentenceData(parts: ['My father ', ' ', ' on the radio while my mom ', ' ', '.'], correctAnswer: 'was reading', targetIndex: 3),
+    ],
+  };
 
   @override
   void initState() {
     super.initState();
     _loadUserRole();
     _loadLessonVideos();
+    _initializeExerciseData(_lessonTitles[_selectedLessonIndex]);
+  }
+
+  void _initializeExerciseData(String lessonTitle) {
+    final lessonExercises = _lessonExerciseLibrary[lessonTitle] ?? _lessonExerciseLibrary['default']!;
+    _sentences = lessonExercises;
+    _answers = lessonExercises.map((item) => item.correctAnswer).toList();
+    _selectedAnswers = List<String?>.filled(lessonExercises.length, null);
+    _submitted = false;
   }
 
   Future<void> _loadLessonVideos() async {
@@ -58,22 +106,18 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
 
     final selectedLesson = _remoteLessons.firstWhere(
       (item) => item['TieuDe']?.toString() == lessonTitle,
-      orElse: () => _remoteLessons.first,
+      orElse: () => {},
     );
 
-    final rawVideoUrl = selectedLesson['VideoUrl']?.toString();
-    final videoUrl = (rawVideoUrl != null && rawVideoUrl.isNotEmpty && !rawVideoUrl.toLowerCase().endsWith('.html'))
-        ? rawVideoUrl
-        : 'https://commons.wikimedia.org/wiki/File:Apollo_15_launch.ogv';
+    final rawVideoUrl = selectedLesson is Map<String, dynamic>
+        ? selectedLesson['VideoUrl']?.toString()
+        : null;
+    final normalized = rawVideoUrl?.trim() ?? '';
+    final videoUrl = (normalized.isNotEmpty && normalized.toLowerCase().endsWith('.mp4'))
+        ? normalized
+        : _fallbackVideoUrl;
 
-    if (videoUrl.isEmpty) {
-      _videoController?.dispose();
-      setState(() {
-        _videoController = null;
-        _videoError = 'Không có URL video phù hợp';
-      });
-      return;
-    }
+    _initializeExerciseData(lessonTitle);
 
     _videoController?.dispose();
     setState(() {
@@ -92,7 +136,7 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
       });
     } catch (e) {
       setState(() {
-        _videoError = 'Lỗi tải video: $e';
+        _videoError = 'Video không phát được trên trình duyệt này. Thử chọn bài khác hoặc tải lại.';
         _isVideoLoading = false;
       });
     }
@@ -121,45 +165,10 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
     });
   }
 
-  final List<String> _answers = [
-    'was having', 
-    'took',
-    'was watching',
-    'hit',
-    
-  ];
-
-  final List<String?> _selectedAnswers = List<String?>.filled(4, null);
-  bool _submitted = false;
-
   List<String> get _availableAnswers {
     final selected = _selectedAnswers.whereType<String>().toList();
     return _answers.where((a) => !selected.contains(a)).toList();
   }
-
-  final List<_SentenceData> _sentences = [
-    _SentenceData(
-      parts: ['The accident ', ' ', ' place while I ', ' ', ' a driving lesson.'],
-      correctAnswer: 'took',
-      targetIndex: 0,
-    ),
-    _SentenceData(
-      parts: ['The accident ', ' ', ' place while I ', ' ', ' a driving lesson.'],
-      correctAnswer: 'was having',
-      targetIndex: 1,
-    ),
-    _SentenceData(
-      parts: ['Last night they ', ' ', ' in bed when they ', ' ', ' a strange noise.'],
-      correctAnswer: 'were trying',
-      targetIndex: 2,
-    ),
-    _SentenceData(
-      parts: ['My father ', ' ', ' on the radio while my mom ', ' ', '.'],
-      correctAnswer: 'was reading',
-      targetIndex: 3,
-    ),
-    
-  ];
 
   void _onAnswerDropped(int index, String answer) {
     setState(() {
