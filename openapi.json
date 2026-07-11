@@ -11,11 +11,11 @@
   },
   "servers": [
     {
-      "url": "http://localhost/API_english_center/api/index.php",
+      "url": "http://localhost/API_english_center/-n-Ti-ng-Anh_Center/index.php",
       "description": "Localhost API"
     },
     {
-      "url": "http://192.168.1.4/API_english_center/api/index.php",
+      "url": "http://192.168.1.4/API_english_center/-n-Ti-ng-Anh_Center/index.php",
       "description": "LAN API"
     }
   ],
@@ -308,7 +308,7 @@
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Tạo thành công",
             "content": {
               "application/json": {

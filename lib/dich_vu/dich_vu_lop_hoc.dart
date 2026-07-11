@@ -8,7 +8,7 @@ class ClassService {
     return [
       {
         'MaLop': 201,
-        'MaKhoaHoc': 101,
+        'MaKhoaHoc': 1,
         'TenLop': 'Tiếng Anh 1 - Sáng',
         'MaGiaoVien': 11,
         'SoChoConLai': 8,
@@ -19,7 +19,7 @@ class ClassService {
       },
       {
         'MaLop': 202,
-        'MaKhoaHoc': 101,
+        'MaKhoaHoc': 1,
         'TenLop': 'Tiếng Anh 1 - Chiều',
         'MaGiaoVien': 12,
         'SoChoConLai': 5,
@@ -30,7 +30,7 @@ class ClassService {
       },
       {
         'MaLop': 204,
-        'MaKhoaHoc': 101,
+        'MaKhoaHoc': 1,
         'TenLop': 'Tiếng Anh 1 - Tối',
         'MaGiaoVien': 14,
         'SoChoConLai': 6,
@@ -40,7 +40,7 @@ class ClassService {
       },
       {
         'MaLop': 203,
-        'MaKhoaHoc': 102,
+        'MaKhoaHoc': 2,
         'TenLop': 'Tiếng Anh 2 - Sáng',
         'MaGiaoVien': 13,
         'SoChoConLai': 3,
@@ -51,7 +51,7 @@ class ClassService {
       },
       {
         'MaLop': 205,
-        'MaKhoaHoc': 102,
+        'MaKhoaHoc': 2,
         'TenLop': 'Tiếng Anh 2 - Chiều',
         'MaGiaoVien': 15,
         'SoChoConLai': 4,
@@ -61,7 +61,7 @@ class ClassService {
       },
       {
         'MaLop': 206,
-        'MaKhoaHoc': 102,
+        'MaKhoaHoc': 2,
         'TenLop': 'Tiếng Anh 2 - Tối',
         'MaGiaoVien': 16,
         'SoChoConLai': 2,
@@ -71,7 +71,7 @@ class ClassService {
       },
       {
         'MaLop': 207,
-        'MaKhoaHoc': 103,
+        'MaKhoaHoc': 3,
         'TenLop': 'Tiếng Anh 3 - Sáng',
         'MaGiaoVien': 17,
         'SoChoConLai': 7,
@@ -81,7 +81,7 @@ class ClassService {
       },
       {
         'MaLop': 208,
-        'MaKhoaHoc': 103,
+        'MaKhoaHoc': 3,
         'TenLop': 'Tiếng Anh 3 - Chiều',
         'MaGiaoVien': 18,
         'SoChoConLai': 9,
@@ -91,12 +91,43 @@ class ClassService {
       },
       {
         'MaLop': 209,
-        'MaKhoaHoc': 103,
+        'MaKhoaHoc': 3,
         'TenLop': 'Tiếng Anh 3 - Tối',
         'MaGiaoVien': 19,
         'SoChoConLai': 4,
         'LichHoc': [
           {'ThuHoc': 6, 'GioBatDau': '20:00', 'GioKetThuc': '21:30', 'Buoi': 'evening'},
+        ],
+      },
+      {
+        'MaLop': 210,
+        'MaKhoaHoc': 4,
+        'TenLop': 'Luyện thi 2/6 - Sáng',
+        'MaGiaoVien': 20,
+        'SoChoConLai': 10,
+        'LichHoc': [
+          {'ThuHoc': 2, 'GioBatDau': '08:00', 'GioKetThuc': '10:00', 'Buoi': 'morning'},
+          {'ThuHoc': 4, 'GioBatDau': '08:00', 'GioKetThuc': '10:00', 'Buoi': 'morning'},
+        ],
+      },
+      {
+        'MaLop': 211,
+        'MaKhoaHoc': 4,
+        'TenLop': 'Luyện thi 2/6 - Chiều',
+        'MaGiaoVien': 21,
+        'SoChoConLai': 8,
+        'LichHoc': [
+          {'ThuHoc': 3, 'GioBatDau': '14:00', 'GioKetThuc': '16:00', 'Buoi': 'afternoon'},
+        ],
+      },
+      {
+        'MaLop': 212,
+        'MaKhoaHoc': 4,
+        'TenLop': 'Luyện thi 2/6 - Tối',
+        'MaGiaoVien': 22,
+        'SoChoConLai': 5,
+        'LichHoc': [
+          {'ThuHoc': 6, 'GioBatDau': '20:00', 'GioKetThuc': '22:00', 'Buoi': 'evening'},
         ],
       },
     ];

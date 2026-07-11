@@ -7,22 +7,28 @@ class CourseService {
   static List<dynamic> buildFallbackCourses() {
     return [
       {
-        'MaKhoaHoc': 101,
+        'MaKhoaHoc': 1,
         'TenKhoaHoc': 'Tiếng Anh 1',
-        'TrinhDo': 'Beginner',
+        'TrinhDo': 'A1',
         'MoTa': 'Tiếng Anh cơ bản cho người mới bắt đầu.',
       },
       {
-        'MaKhoaHoc': 102,
+        'MaKhoaHoc': 2,
         'TenKhoaHoc': 'Tiếng Anh 2',
-        'TrinhDo': 'Intermediate',
+        'TrinhDo': 'A2',
         'MoTa': 'Tiếng Anh trình độ trung cấp, nâng cao giao tiếp.',
       },
       {
-        'MaKhoaHoc': 103,
+        'MaKhoaHoc': 3,
         'TenKhoaHoc': 'Tiếng Anh 3',
-        'TrinhDo': 'Upper Intermediate',
-        'MoTa': 'Luyện nâng cao, chuẩn bị các kỹ năng chuyên sâu.',
+        'TrinhDo': 'A2',
+        'MoTa': 'Tiếng Anh nâng cao cấp độ A2-B1.',
+      },
+      {
+        'MaKhoaHoc': 4,
+        'TenKhoaHoc': 'Luyện thi 2/6',
+        'TrinhDo': '2/6',
+        'MoTa': 'Luyện thi tiếng Anh chuyên sâu theo định hướng 2/6.',
       },
     ];
   }

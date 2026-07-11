@@ -26,13 +26,23 @@ class _RegisterClassScreenState extends State<RegisterClassScreen> {
   Future<void> loadClasses() async {
     final token = await UserSession.getToken();
     final data = await ClassService.getClasses(token: token);
-    final filtered = widget.maKhoaHoc != null
-        ? data.where((item) {
-            final maKhoaHocValue = item['MaKhoaHoc'];
-            if (maKhoaHocValue == null) return false;
-            return maKhoaHocValue.toString() == widget.maKhoaHoc.toString();
-          }).toList()
-        : data;
+    final filtered = data.where((item) {
+      final maKhoaHocValue = item['MaKhoaHoc'];
+      if (widget.maKhoaHoc != null) {
+        if (maKhoaHocValue != null && maKhoaHocValue.toString() == widget.maKhoaHoc.toString()) {
+          return true;
+        }
+      }
+
+      final courseName = widget.courseName?.toString().toLowerCase().trim();
+      final className = item['TenLop']?.toString().toLowerCase() ?? '';
+      if (courseName != null && courseName.isNotEmpty) {
+        return className.contains(courseName);
+      }
+
+      return widget.maKhoaHoc == null;
+    }).toList();
+
     if (mounted) {
       setState(() {
         classes = filtered;
@@ -50,13 +60,22 @@ class _RegisterClassScreenState extends State<RegisterClassScreen> {
     };
 
     final days = <String>{};
+    final specificDates = <String>{};
+
     for (final schedule in schedules) {
-      final thu = schedule['ThuHoc'] ?? 0;
-      if (dayMap.containsKey(thu)) {
+      final thu = schedule['ThuHoc'];
+      if (thu is int && dayMap.containsKey(thu)) {
         days.add(dayMap[thu]!);
+      }
+      final ngayHoc = schedule['NgayHoc']?.toString().trim();
+      if (ngayHoc != null && ngayHoc.isNotEmpty) {
+        specificDates.add(ngayHoc);
       }
     }
 
+    if (specificDates.isNotEmpty) {
+      return specificDates.join(', ');
+    }
     return days.isNotEmpty ? days.join(', ') : 'Chưa xác định';
   }
 
@@ -64,10 +83,28 @@ class _RegisterClassScreenState extends State<RegisterClassScreen> {
     if (schedules.isEmpty) return '';
     
     final schedule = schedules.first;
-    final gioBatDau = schedule['GioBatDau'] ?? '';
-    final gioKetThuc = schedule['GioKetThuc'] ?? '';
+    final gioBatDau = schedule['GioBatDau']?.toString().trim() ?? '';
+    final gioKetThuc = schedule['GioKetThuc']?.toString().trim() ?? '';
     
+    if (gioBatDau.isEmpty && gioKetThuc.isEmpty) return 'Chưa xác định';
     return '$gioBatDau - $gioKetThuc';
+  }
+
+  String _formatStartDate(Map<String, dynamic> item) {
+    final ngayKhaiGiang = item['NgayKhaiGiang']?.toString().trim();
+    if (ngayKhaiGiang != null && ngayKhaiGiang.isNotEmpty) {
+      return ngayKhaiGiang;
+    }
+
+    final schedules = item['LichHoc'] as List? ?? [];
+    for (final schedule in schedules) {
+      final ngayHoc = schedule['NgayHoc']?.toString().trim();
+      if (ngayHoc != null && ngayHoc.isNotEmpty) {
+        return ngayHoc;
+      }
+    }
+
+    return 'Chưa có ngày cụ thể';
   }
 
   @override
@@ -122,8 +159,10 @@ class _RegisterClassScreenState extends State<RegisterClassScreen> {
                             const SizedBox(height: 6),
                             Text('Giáo viên: ${item['MaGiaoVien'] ?? 'Chưa phân công'}'),
                             const SizedBox(height: 10),
-                            Text('Ngày học: ${_formatSchedule(schedules)}'),
+                            Text('Lịch học: ${_formatSchedule(schedules)}'),
+                            Text('Buổi: $shiftText'),
                             Text('Giờ: ${_formatTime(schedules)}'),
+                            Text('Ngày bắt đầu: ${_formatStartDate(item)}'),
                             const SizedBox(height: 6),
                             Text(
                               'Còn $soChoConLai chỗ',
