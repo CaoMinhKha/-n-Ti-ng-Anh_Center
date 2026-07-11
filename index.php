@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
@@ -27,8 +27,14 @@ function getRequestPath() {
     }
 
     $requestUri = trim($requestUri, '/');
-    if ($requestUri === 'index.php') {
+    if (strpos($requestUri, 'index.php/') === 0) {
+        $requestUri = substr($requestUri, strlen('index.php/'));
+    }
+    if ($requestUri === 'index.php' || $requestUri === 'index.php?request=') {
         return '';
+    }
+    if (strpos($requestUri, 'index.php') === 0) {
+        $requestUri = trim(substr($requestUri, strlen('index.php')), '/');
     }
     return $requestUri;
 }
@@ -101,7 +107,7 @@ if (!in_array($method, $routes[$request])) {
 }
 
 $user = getRequestUser();
-if ($request !== 'dangnhap' && !($request === 'hocvien' && $method === 'POST') && !($request === 'hocvien' && $method === 'GET') && $request !== 'elearning' && $request !== 'dictionary' && $request !== 'dictionary/quick') {
+if ($request !== 'dangnhap' && !($request === 'hocvien' && $method === 'POST') && !($request === 'hocvien' && $method === 'GET') && !($request === 'giaovien' && $method === 'POST') && $request !== 'elearning' && $request !== 'dictionary' && $request !== 'dictionary/quick') {
     if (!$user) {
         sendResponse(['status' => false, 'message' => 'Token không hợp lệ hoặc đã hết hạn'], 401);
     }

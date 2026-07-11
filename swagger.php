@@ -21,6 +21,7 @@ $openapiUrl = 'openapi.json';
 <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.19.0/swagger-ui-bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.19.0/swagger-ui-standalone-preset.min.js"></script>
 <script>
+  const openapiUrl = '<?php echo $openapiUrl; ?>';
   window.onload = function() {
     const ui = SwaggerUIBundle({
       url: openapiUrl + '?v=' + new Date().getTime(),
