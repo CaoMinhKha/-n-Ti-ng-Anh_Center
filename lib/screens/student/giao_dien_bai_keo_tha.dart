@@ -64,7 +64,7 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
     final rawVideoUrl = selectedLesson['VideoUrl']?.toString();
     final videoUrl = (rawVideoUrl != null && rawVideoUrl.isNotEmpty && !rawVideoUrl.toLowerCase().endsWith('.html'))
         ? rawVideoUrl
-        : 'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4';
+        : 'https://commons.wikimedia.org/wiki/File:Apollo_15_launch.ogv';
 
     if (videoUrl.isEmpty) {
       _videoController?.dispose();
@@ -126,13 +126,10 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
     'took',
     'was watching',
     'hit',
-    'were trying',
-    'was reading',
-    'was sitting',
-    'witnessed',
+    
   ];
 
-  final List<String?> _selectedAnswers = List<String?>.filled(8, null);
+  final List<String?> _selectedAnswers = List<String?>.filled(4, null);
   bool _submitted = false;
 
   List<String> get _availableAnswers {
@@ -161,26 +158,7 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
       correctAnswer: 'was reading',
       targetIndex: 3,
     ),
-    _SentenceData(
-      parts: ['Some people were waiting at the bus stop. While I ', ' ', ' the street, I ', ' ', ' an accident.'],
-      correctAnswer: 'was watching',
-      targetIndex: 4,
-    ),
-    _SentenceData(
-      parts: ['A car couldn\'t stop at the traffic lights and ', ' ', ' another car.'],
-      correctAnswer: 'hit',
-      targetIndex: 5,
-    ),
-    _SentenceData(
-      parts: ['I ', ' ', ' by the window and watch the street.'],
-      correctAnswer: 'was sitting',
-      targetIndex: 6,
-    ),
-    _SentenceData(
-      parts: ['I ', ' ', ' an accident.'],
-      correctAnswer: 'witnessed',
-      targetIndex: 7,
-    ),
+    
   ];
 
   void _onAnswerDropped(int index, String answer) {
