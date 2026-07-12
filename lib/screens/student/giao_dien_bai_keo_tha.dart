@@ -55,6 +55,8 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
     'Lesson 1A.5: Speaking',
     'Lesson 1A.6: Language Focus B',
     'Lesson 1A.7: Language Focus A',
+    'Lesson 1A.8: Tiếng Anh Chiều',
+    'Lesson 1A.9: Tiếng Anh Tối',
     'Lesson 1B.1: Vocabulary',
     'Lesson 1B.2: Listening a',
     'Lesson 1B.3: Language Focus',
@@ -122,6 +124,24 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
       items: [
         _ExerciseItem(parts: ['Sắp xếp các từ để thành câu đúng:'], correctAnswer: 'They are playing football', targetIndex: 0, options: ['They', 'are', 'playing', 'football']),
         _ExerciseItem(parts: ['Sắp xếp các từ để thành câu đúng:'], correctAnswer: 'I have never been there', targetIndex: 1, options: ['I', 'have', 'never', 'been', 'there']),
+      ],
+    ),
+    'Lesson 1A.8: Tiếng Anh Chiều': const _LessonExerciseSet(
+      type: ExerciseType.dragDrop,
+      items: [
+        _ExerciseItem(parts: ['In the afternoon, I ', ' ', ' my homework.'], correctAnswer: 'do', targetIndex: 0, options: ['do', 'does', 'did', 'doing']),
+        _ExerciseItem(parts: ['We ', ' ', ' in the park after school.'], correctAnswer: 'play', targetIndex: 1, options: ['play', 'plays', 'played', 'playing']),
+        _ExerciseItem(parts: ['She always ', ' ', ' tea in the evening.'], correctAnswer: 'drinks', targetIndex: 2, options: ['drinks', 'drink', 'drinking', 'drank']),
+        _ExerciseItem(parts: ['They ', ' ', ' music later tonight.'], correctAnswer: 'listen to', targetIndex: 3, options: ['listen to', 'listens to', 'listened to', 'listening to']),
+      ],
+    ),
+    'Lesson 1A.9: Tiếng Anh Tối': const _LessonExerciseSet(
+      type: ExerciseType.fillBlank,
+      items: [
+        _ExerciseItem(parts: ['He ', ' ', ' television every night.'], correctAnswer: 'watches', targetIndex: 0, options: ['watch', 'watches', 'watched', 'watching']),
+        _ExerciseItem(parts: ['We ', ' ', ' dinner together in the evening.'], correctAnswer: 'have', targetIndex: 1, options: ['have', 'has', 'had', 'having']),
+        _ExerciseItem(parts: ['I ', ' ', ' to bed early.'], correctAnswer: 'go', targetIndex: 2, options: ['go', 'goes', 'went', 'going']),
+        _ExerciseItem(parts: ['She ', ' ', ' her homework before sleep.'], correctAnswer: 'finishes', targetIndex: 3, options: ['finish', 'finishes', 'finished', 'finishing']),
       ],
     ),
     'default': const _LessonExerciseSet(
@@ -231,6 +251,7 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
   }
 
   void _onAnswerDropped(int index, String answer) {
+    if (_submitted) return;
     setState(() {
       _selectedAnswers[index] = answer;
       _submitted = false;
@@ -238,6 +259,7 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
   }
 
   void _removeAnswer(int index) {
+    if (_submitted) return;
     setState(() {
       _selectedAnswers[index] = null;
       _arrangedSelections[index].clear();
@@ -247,6 +269,7 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
   }
 
   void _onArrangeWord(int index, String word) {
+    if (_submitted) return;
     setState(() {
       if (!_arrangedSelections[index].contains(word)) {
         _arrangedSelections[index].add(word);
@@ -257,6 +280,7 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
   }
 
   void _removeArrangedWord(int index, int wordIndex) {
+    if (_submitted) return;
     setState(() {
       _arrangedSelections[index].removeAt(wordIndex);
       _selectedAnswers[index] = _arrangedSelections[index].join(' ');
@@ -265,10 +289,13 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
   }
 
   void _goToNextLesson() {
+    final lessonTitle = _lessonTitles[_selectedLessonIndex];
+    if (_lessonCompleted[lessonTitle] != true) return;
     if (_selectedLessonIndex < _lessonTitles.length - 1) {
       setState(() {
         _selectedLessonIndex += 1;
       });
+      _initializeExerciseData(_lessonTitles[_selectedLessonIndex]);
       _setVideoForLesson(_lessonTitles[_selectedLessonIndex]);
     }
   }
@@ -282,26 +309,27 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
       return;
     }
 
-    setState(() {
-      _submitted = true;
-    });
-
     final score = _sentences.where((question) {
       final answer = _selectedAnswers[question.targetIndex]?.trim().toLowerCase();
       return answer == question.correctAnswer.toLowerCase();
     }).length;
 
     final lessonTitle = _lessonTitles[_selectedLessonIndex];
-    _lessonScores[lessonTitle] = score;
-    _lessonCompleted[lessonTitle] = score == _sentences.length;
+    final isLessonComplete = score == _sentences.length;
 
-    if (_lessonCompleted[lessonTitle] == true) {
+    setState(() {
+      _submitted = true;
+      _lessonScores[lessonTitle] = score;
+      _lessonCompleted[lessonTitle] = isLessonComplete;
+    });
+
+    if (isLessonComplete) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Hoàn thành bài học! Bạn đạt $score/${_sentences.length} điểm.')),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Bạn đã trả lời đúng $score/${_sentences.length} câu.')),
+        SnackBar(content: Text('Bạn đã trả lời đúng $score/${_sentences.length} câu. Hãy thử lại để hoàn thành.')),
       );
     }
   }
@@ -431,6 +459,7 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
   Widget _buildLessonContent(String lessonTitle, double width) {
     final completed = _lessonCompleted[lessonTitle] == true;
     final score = _lessonScores[lessonTitle];
+    final answeredCount = _selectedAnswers.where((answer) => answer != null && answer.trim().isNotEmpty).length;
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
@@ -463,7 +492,12 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
               ],
             ),
             const SizedBox(height: 10),
-            if (completed && score != null)
+            if (answeredCount > 0)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text('Đã hoàn thành: $answeredCount/${_sentences.length} câu', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              ),
+            if (_submitted && score != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Text('Điểm: $score/${_sentences.length}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.green)),
@@ -603,7 +637,32 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
     );
   }
 
+  Widget _buildResultChip(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('$label: ', style: TextStyle(color: color, fontWeight: FontWeight.w700)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+
   Widget _buildExerciseArea(double width) {
+    final lessonTitle = _lessonTitles[_selectedLessonIndex];
+    final score = _lessonScores[lessonTitle];
+    final totalQuestions = _sentences.length;
+    final correctCount = score ?? 0;
+    final wrongCount = totalQuestions - correctCount;
+    final isCompleted = _lessonCompleted[lessonTitle] == true;
+
     final exercisePanel = ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -628,6 +687,25 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: item.parts.map((part) {
                       if (part == ' ') {
+                        if (_submitted) {
+                          return Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE8F0FF),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.blueGrey, width: 1.6),
+                            ),
+                            child: SizedBox(
+                              width: 130,
+                              child: Text(
+                                item.correctAnswer,
+                                style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          );
+                        }
                         return GestureDetector(
                           onTap: selected != null ? () => _removeAnswer(item.targetIndex) : null,
                           child: DragTarget<String>(
@@ -674,27 +752,28 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
                   const SizedBox(height: 12),
                   const Text('Kéo thả từ vào chỗ trống', style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: item.options.where((option) => option.toLowerCase() != selected?.trim().toLowerCase()).map((option) {
-                      return Draggable<String>(
-                        data: option,
-                        feedback: Material(
-                          color: Colors.transparent,
-                          child: Chip(
-                            backgroundColor: const Color(0xFF3D5AFE),
-                            label: Text(option, style: const TextStyle(color: Colors.white)),
+                  if (!_submitted)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: item.options.where((option) => option.toLowerCase() != selected?.trim().toLowerCase()).map((option) {
+                        return Draggable<String>(
+                          data: option,
+                          feedback: Material(
+                            color: Colors.transparent,
+                            child: Chip(
+                              backgroundColor: const Color(0xFF3D5AFE),
+                              label: Text(option, style: const TextStyle(color: Colors.white)),
+                            ),
                           ),
-                        ),
-                        childWhenDragging: Opacity(
-                          opacity: 0.4,
-                          child: Chip(label: Text(option), backgroundColor: Colors.grey[200]),
-                        ),
-                        child: Chip(label: Text(option), backgroundColor: const Color(0xFFE3F2FD)),
-                      );
-                    }).toList(),
-                  ),
+                          childWhenDragging: Opacity(
+                            opacity: 0.4,
+                            child: Chip(label: Text(option), backgroundColor: Colors.grey[200]),
+                          ),
+                          child: Chip(label: Text(option), backgroundColor: const Color(0xFFE3F2FD)),
+                        );
+                      }).toList(),
+                    ),
                 ] else if (_currentExerciseType == ExerciseType.multipleChoice) ...[
                   Wrap(
                     crossAxisAlignment: WrapCrossAlignment.center,
@@ -710,7 +789,7 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
                               border: Border.all(color: Colors.blueGrey, width: 1.2),
                             ),
                             child: Text(
-                              selected ?? 'Chọn đáp án',
+                              _submitted ? item.correctAnswer : (selected ?? 'Chọn đáp án'),
                               style: TextStyle(color: selected == null || selected.trim().isEmpty ? Colors.black45 : Colors.black87),
                             ),
                           ),
@@ -725,21 +804,22 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
                   const SizedBox(height: 12),
                   const Text('Chọn đáp án đúng', style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: List.generate(item.options.length, (optionIndex) {
-                      final option = item.options[optionIndex];
-                      final label = ['A', 'B', 'C', 'D'][optionIndex];
-                      final isSelected = selected?.trim().toLowerCase() == option.toLowerCase();
-                      return ChoiceChip(
-                        label: Text('$label. $option'),
-                        selected: isSelected,
-                        selectedColor: const Color(0x293D5AFE),
-                        onSelected: (_) => _onAnswerDropped(item.targetIndex, option),
-                      );
-                    }),
-                  ),
+                  if (!_submitted)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: List.generate(item.options.length, (optionIndex) {
+                        final option = item.options[optionIndex];
+                        final label = ['A', 'B', 'C', 'D'][optionIndex];
+                        final isSelected = selected?.trim().toLowerCase() == option.toLowerCase();
+                        return ChoiceChip(
+                          label: Text('$label. $option'),
+                          selected: isSelected,
+                          selectedColor: const Color(0x293D5AFE),
+                          onSelected: (_) => _onAnswerDropped(item.targetIndex, option),
+                        );
+                      }),
+                    ),
                 ] else if (_currentExerciseType == ExerciseType.fillBlank) ...[
                   Wrap(
                     crossAxisAlignment: WrapCrossAlignment.center,
@@ -747,18 +827,33 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
                       if (part == ' ') {
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                          child: SizedBox(
-                            width: 150,
-                            child: TextField(
-                              controller: _textControllers[item.targetIndex],
-                              decoration: const InputDecoration(
-                                hintText: 'Điền từ vào đây',
-                                border: OutlineInputBorder(),
-                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                              ),
-                              onChanged: (value) => _onAnswerDropped(item.targetIndex, value),
-                            ),
-                          ),
+                          child: _submitted
+                              ? Container(
+                                  width: 150,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE8F0FF),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.blueGrey, width: 1.2),
+                                  ),
+                                  child: Text(
+                                    item.correctAnswer,
+                                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                )
+                              : SizedBox(
+                                  width: 150,
+                                  child: TextField(
+                                    controller: _textControllers[item.targetIndex],
+                                    decoration: const InputDecoration(
+                                      hintText: 'Điền từ vào đây',
+                                      border: OutlineInputBorder(),
+                                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                    ),
+                                    onChanged: (value) => _onAnswerDropped(item.targetIndex, value),
+                                  ),
+                                ),
                         );
                       }
                       return Padding(
@@ -797,12 +892,17 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
                       final word = entry.value;
                       return Chip(
                         label: Text(word),
-                        deleteIcon: const Icon(Icons.close, size: 18),
-                        onDeleted: () => _removeArrangedWord(item.targetIndex, wordIndex),
+                        deleteIcon: !_submitted ? const Icon(Icons.close, size: 18) : null,
+                        onDeleted: !_submitted ? () => _removeArrangedWord(item.targetIndex, wordIndex) : null,
                       );
                     }).toList(),
                   ),
                   const SizedBox(height: 12),
+                  if (_submitted)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text('Đáp án đúng: ${item.correctAnswer}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    ),
                   if (_submitted && selected != null)
                     Text(
                       isCorrect ? 'Đúng' : 'Sai, đáp án đúng: ${item.correctAnswer}',
@@ -840,8 +940,13 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text('Gợi ý: điền đúng từ vào chỗ trống.', style: TextStyle(color: Colors.grey[700])),
+                  if (_submitted)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: Text('Đáp án: ${item.correctAnswer}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    ),
                 ],
-                if (_submitted && selected != null)
+                if (_submitted)
                   Padding(
                     padding: const EdgeInsets.only(top: 10),
                     child: Text(
@@ -854,42 +959,90 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
                   ),
               ],
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
 
     final actionPanel = SizedBox(
       width: double.infinity,
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        color: _submitted ? (isCompleted ? Colors.green.shade50 : Colors.orange.shade50) : Colors.white,
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Nộp bài', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: _checkAnswers,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF3D5AFE),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  minimumSize: const Size.fromHeight(48),
+          child: _submitted
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isCompleted ? 'Bài học hoàn thành' : 'Kết quả bài tập',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 10,
+                      children: [
+                        _buildResultChip('Đúng', '$correctCount/$totalQuestions', Colors.green),
+                        _buildResultChip('Sai', '$wrongCount/$totalQuestions', Colors.red),
+                        _buildResultChip('Điểm', '$correctCount/$totalQuestions', const Color(0xFF3D5AFE)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: _resetGame,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF3D5AFE),
+                              minimumSize: const Size.fromHeight(48),
+                            ),
+                            child: const Text('Làm lại'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: isCompleted ? _goToNextLesson : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF3D5AFE),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              minimumSize: const Size.fromHeight(48),
+                            ),
+                            child: const Text('Qua bài tiếp theo'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Nộp bài', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: _checkAnswers,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3D5AFE),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        minimumSize: const Size.fromHeight(48),
+                      ),
+                      child: const Text('Kiểm tra đáp án'),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: _resetGame,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF3D5AFE),
+                        minimumSize: const Size.fromHeight(48),
+                      ),
+                      child: const Text('Làm lại'),
+                    ),
+                  ],
                 ),
-                child: const Text('Kiểm tra đáp án'),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: _resetGame,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF3D5AFE),
-                  minimumSize: const Size.fromHeight(48),
-                ),
-                child: const Text('Làm lại'),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -906,3 +1059,4 @@ class _LessonDragMatchScreenState extends State<LessonDragMatchScreen> {
     );
   }
 }
+

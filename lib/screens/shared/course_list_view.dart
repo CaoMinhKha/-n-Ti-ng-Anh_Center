@@ -42,50 +42,96 @@ class CourseListView extends StatelessWidget {
         final level = item['TrinhDo']?.toString() ?? '';
         final description = item['MoTa']?.toString() ?? 'Chưa có mô tả.';
         final maKhoaHoc = int.tryParse(item['MaKhoaHoc']?.toString() ?? '') ?? 0;
+        final levelColor = level == 'A1'
+            ? Colors.green.shade700
+            : level == 'A2'
+                ? Colors.indigo.shade700
+                : level == 'A3'
+                    ? Colors.deepPurple.shade700
+                    : Colors.blueGrey.shade700;
 
         return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 4,
+          color: Colors.white,
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: InkWell(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
             onTap: onCourseTap != null ? () => onCourseTap!(item) : null,
             child: Padding(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(18),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const CircleAvatar(child: Icon(Icons.menu_book)),
-                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: levelColor.withValues(alpha: 0.16),
+                        ),
+                        child: Icon(Icons.menu_book, color: levelColor),
+                      ),
+                      const SizedBox(width: 14),
                       Expanded(
                         child: Text(
                           title,
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: levelColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          level,
+                          style: TextStyle(color: levelColor, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  Text('Trình độ: $level'),
-                  const SizedBox(height: 4),
-                  Text('Mô tả: $description'),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 14),
+                  Text(
+                    description,
+                    style: const TextStyle(fontSize: 15, height: 1.5, color: Colors.black87),
+                  ),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       if (onRegisterCourse != null)
                         Expanded(
                           child: ElevatedButton(
                             onPressed: maKhoaHoc > 0 ? () => onRegisterCourse!(maKhoaHoc) : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF5E35B1),
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.grey.shade300,
+                              disabledForegroundColor: Colors.grey.shade700,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              elevation: 2,
+                              textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
                             child: const Text('Đăng ký'),
                           ),
                         ),
                       if (onRegisterCourse != null && onChooseClass != null)
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
                       if (onChooseClass != null)
                         Expanded(
                           child: OutlinedButton(
                             onPressed: () => onChooseClass!(item),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF5E35B1),
+                              disabledForegroundColor: Colors.grey.shade600,
+                              side: const BorderSide(color: Color(0xFF5E35B1)),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
                             child: const Text('Chọn lớp'),
                           ),
                         ),

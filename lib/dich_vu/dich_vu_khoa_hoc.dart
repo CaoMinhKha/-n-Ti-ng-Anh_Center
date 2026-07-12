@@ -21,7 +21,7 @@ class CourseService {
       {
         'MaKhoaHoc': 3,
         'TenKhoaHoc': 'Tiếng Anh 3',
-        'TrinhDo': 'A2',
+        'TrinhDo': 'A3',
         'MoTa': 'Tiếng Anh nâng cao cấp độ A2-B1.',
       },
       {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../dich_vu/dich_vu_khoa_hoc.dart';
 import '../../dich_vu/dich_vu_dang_ky_khoa_hoc.dart';
-import '../../thanh_phan/thanh_menu.dart';
 import '../../tien_ich/phien_lam_viec_nguoi_dung.dart';
 import '../shared/course_list_view.dart';
 import 'giao_dien_dang_ky_lop.dart';
@@ -64,16 +63,6 @@ class _StudentCourseScreenState extends State<StudentCourseScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Đăng ký khóa học')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const RegisterClassScreen()),
-          );
-        },
-        icon: const Icon(Icons.calendar_today),
-        label: const Text('Đăng ký lớp'),
-      ),
       body: CourseListView(
         loading: loading,
         courses: courses,

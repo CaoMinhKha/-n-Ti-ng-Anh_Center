@@ -23,25 +23,62 @@ class _RegisterClassScreenState extends State<RegisterClassScreen> {
     loadClasses();
   }
 
+  String _normalizeCourseName(String? value) {
+    final normalized = (value ?? '').toLowerCase().trim();
+    if (normalized.isEmpty) return '';
+
+    return normalized
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .replaceAll(RegExp(r'\s*-\s*(sáng|chiều|tối|morning|afternoon|evening)\s*$'), '');
+  }
+
+  bool _matchesCourse(Map<String, dynamic> item) {
+    final maKhoaHocValue = item['MaKhoaHoc']?.toString() ?? '';
+    if (widget.maKhoaHoc != null && maKhoaHocValue == widget.maKhoaHoc.toString()) {
+      return true;
+    }
+
+    final className = item['TenLop']?.toString() ?? '';
+    final normalizedClassName = _normalizeCourseName(className);
+    final normalizedCourseName = _normalizeCourseName(widget.courseName);
+
+    if (normalizedCourseName.isNotEmpty && normalizedClassName.contains(normalizedCourseName)) {
+      return true;
+    }
+
+    return widget.maKhoaHoc == null;
+  }
+
   Future<void> loadClasses() async {
     final token = await UserSession.getToken();
     final data = await ClassService.getClasses(token: token);
-    final filtered = data.where((item) {
-      final maKhoaHocValue = item['MaKhoaHoc'];
-      if (widget.maKhoaHoc != null) {
-        if (maKhoaHocValue != null && maKhoaHocValue.toString() == widget.maKhoaHoc.toString()) {
-          return true;
+    final filtered = <Map<String, dynamic>>[];
+
+    if (widget.maKhoaHoc != null) {
+      filtered.addAll(data.where((item) => item['MaKhoaHoc']?.toString() == widget.maKhoaHoc.toString()).cast<Map<String, dynamic>>());
+    } else {
+      filtered.addAll(data.where((item) => _matchesCourse(item as Map<String, dynamic>)).cast<Map<String, dynamic>>());
+    }
+
+    if (widget.maKhoaHoc != null) {
+      final existingMaLop = filtered.map((item) => item['MaLop']?.toString()).toSet();
+      final fallbackClasses = ClassService.buildFallbackClasses();
+      for (final item in fallbackClasses) {
+        if (item['MaKhoaHoc']?.toString() == widget.maKhoaHoc.toString()) {
+          final maLop = item['MaLop']?.toString();
+          if (maLop != null && !existingMaLop.contains(maLop)) {
+            filtered.add(item);
+          }
         }
       }
+    }
 
-      final courseName = widget.courseName?.toString().toLowerCase().trim();
-      final className = item['TenLop']?.toString().toLowerCase() ?? '';
-      if (courseName != null && courseName.isNotEmpty) {
-        return className.contains(courseName);
-      }
-
-      return widget.maKhoaHoc == null;
-    }).toList();
+    filtered.sort((a, b) {
+      final shiftOrder = {'morning': 0, 'afternoon': 1, 'evening': 2};
+      final aShift = (a['LichHoc'] as List<dynamic>?)?.first['Buoi']?.toString() ?? 'morning';
+      final bShift = (b['LichHoc'] as List<dynamic>?)?.first['Buoi']?.toString() ?? 'morning';
+      return (shiftOrder[aShift] ?? 0).compareTo(shiftOrder[bShift] ?? 0);
+    });
 
     if (mounted) {
       setState(() {
@@ -110,9 +147,13 @@ class _RegisterClassScreenState extends State<RegisterClassScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.courseName != null && widget.courseName!.isNotEmpty
-          ? 'Lớp của ${widget.courseName}'
-          : 'Đăng ký lớp học')),
+      backgroundColor: const Color(0xFFF5F6FB),
+      appBar: AppBar(
+        title: Text(widget.courseName != null && widget.courseName!.isNotEmpty
+            ? 'Lớp của ${widget.courseName}'
+            : 'Đăng ký lớp học'),
+        backgroundColor: const Color(0xFF5E35B1),
+      ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : classes.isEmpty
@@ -132,22 +173,38 @@ class _RegisterClassScreenState extends State<RegisterClassScreen> {
                                      shift == 'afternoon' ? 'Chiều' : 'Tối';
                     
                     return Card(
-                      margin: const EdgeInsets.only(bottom: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      color: Colors.white,
+                      elevation: 4,
+                      margin: const EdgeInsets.only(bottom: 18),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                       child: Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(18),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: Colors.blue.shade50,
+                                    color: const Color(0xFF5E35B1),
                                     borderRadius: BorderRadius.circular(999),
+                                    boxShadow: [
+                                      const BoxShadow(
+                                        color: Color.fromRGBO(0, 0, 0, 0.08),
+                                        blurRadius: 6,
+                                        offset: Offset(0, 3),
+                                      ),
+                                    ],
                                   ),
-                                  child: Text(shiftText, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  child: Text(
+                                    shiftText,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                               ],
@@ -157,13 +214,51 @@ class _RegisterClassScreenState extends State<RegisterClassScreen> {
                               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 6),
-                            Text('Giáo viên: ${item['MaGiaoVien'] ?? 'Chưa phân công'}'),
+                            Row(
+                              children: [
+                                const Icon(Icons.person, size: 18, color: Colors.black54),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    'Giáo viên: ${item['MaGiaoVien'] ?? 'Chưa phân công'}',
+                                    style: const TextStyle(color: Colors.black87),
+                                  ),
+                                ),
+                              ],
+                            ),
                             const SizedBox(height: 10),
-                            Text('Lịch học: ${_formatSchedule(schedules)}'),
-                            Text('Buổi: $shiftText'),
-                            Text('Giờ: ${_formatTime(schedules)}'),
-                            Text('Ngày bắt đầu: ${_formatStartDate(item)}'),
-                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                const Icon(Icons.schedule, size: 18, color: Colors.black54),
+                                const SizedBox(width: 6),
+                                Expanded(child: Text('Lịch học: ${_formatSchedule(schedules)}')),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(Icons.wb_twighlight, size: 18, color: Colors.black54),
+                                const SizedBox(width: 6),
+                                Expanded(child: Text('Buổi: $shiftText')),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(Icons.access_time, size: 18, color: Colors.black54),
+                                const SizedBox(width: 6),
+                                Expanded(child: Text('Giờ: ${_formatTime(schedules)}')),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(Icons.calendar_month, size: 18, color: Colors.black54),
+                                const SizedBox(width: 6),
+                                Expanded(child: Text('Ngày bắt đầu: ${_formatStartDate(item)}')),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
                             Text(
                               'Còn $soChoConLai chỗ',
                               style: TextStyle(
@@ -171,16 +266,17 @@ class _RegisterClassScreenState extends State<RegisterClassScreen> {
                                 color: soChoConLai > 0 ? Colors.green : Colors.red,
                               ),
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 14),
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
                                 onPressed: soChoConLai > 0 ? () async {
+                                  final messenger = ScaffoldMessenger.of(context);
                                   final studentId = await UserSession.getUserId();
                                   final maLop = item['MaLop'] ?? 0;
                                   
                                   if (studentId == null) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
+                                    messenger.showSnackBar(
                                       const SnackBar(content: Text('Lỗi: Không tìm thấy ID học viên')),
                                     );
                                     return;
@@ -192,28 +288,40 @@ class _RegisterClassScreenState extends State<RegisterClassScreen> {
                                       maLop: maLop as int,
                                     );
                                     
-                                    if (mounted) {
-                                      if (result['status'] == true) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('Đã đăng ký lớp thành công')),
-                                        );
-                                        // Load lại danh sách lớp để cập nhật số chỗ
-                                        await loadClasses();
-                                      } else {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('Lỗi: ${result['message'] ?? 'Đăng ký thất bại'}')),
-                                        );
-                                      }
-                                    }
-                                  } catch (e) {
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Lỗi: $e')),
+                                    if (!mounted) return;
+                                    if (result['status'] == true) {
+                                      messenger.showSnackBar(
+                                        const SnackBar(content: Text('Đã đăng ký lớp thành công')),
+                                      );
+                                      await loadClasses();
+                                    } else {
+                                      messenger.showSnackBar(
+                                        SnackBar(content: Text('Lỗi: ${result['message'] ?? 'Đăng ký thất bại'}')),
                                       );
                                     }
+                                  } catch (e) {
+                                    if (!mounted) return;
+                                    messenger.showSnackBar(
+                                      SnackBar(content: Text('Lỗi: $e')),
+                                    );
                                   }
                                 } : null,
-                                child: Text(soChoConLai > 0 ? 'Đăng ký lớp này' : 'Hết chỗ'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF5E35B1),
+                                  foregroundColor: Colors.white,
+                                  disabledBackgroundColor: Colors.grey.shade300,
+                                  disabledForegroundColor: Colors.grey.shade700,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  elevation: 2,
+                                  textStyle: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                child: Text(
+                                  soChoConLai > 0 ? 'Đăng ký lớp này' : 'Hết chỗ',
+                                ),
                               ),
                             ),
                           ],
