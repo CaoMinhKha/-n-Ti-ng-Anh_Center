@@ -1,18 +1,15 @@
-﻿import 'dart:developer' as developer;
-import 'api_client.dart';
-import 'api_response_helper.dart';
+﻿import '../tien_ich/api_client.dart';
 
 class StudentService {
   static Future<List<dynamic>> getStudents({String? token}) async {
     try {
-      final json = await ApiClient.getJson('hocvien', token: token);
+      final json = await ApiClient.getJson('/hocvien', token: token);
       if (json['status'] == true) {
-        return parseListResponse(json);
+        return json['data'] ?? [];
       }
     } catch (e) {
-      developer.log('StudentService error: $e', name: 'StudentService');
+      print('StudentService error: $e');
     }
     return [];
   }
 }
-

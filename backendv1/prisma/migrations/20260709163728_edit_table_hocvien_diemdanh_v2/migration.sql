@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `hocvien_diemdanh` ADD COLUMN `UpdatedAt` DATETIME(0) NULL DEFAULT CURRENT_TIMESTAMP(0);

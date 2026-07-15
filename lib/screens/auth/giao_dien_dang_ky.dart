@@ -1,432 +1,105 @@
 import 'package:flutter/material.dart';
-import '../../dich_vu/dich_vu_dang_ky.dart';
-import '../../tien_ich/phien_lam_viec_nguoi_dung.dart';
+import 'package:intl/intl.dart';
+import '../../dich_vu/dich_vu_xac_thuc.dart';
+import 'giao_dien_xac_thuc_email.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() =>
-      _RegisterScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState
-    extends State<RegisterScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  DateTime? _selectedDate;
+  String _selectedGender = 'NAM';
+  bool _isLoading = false;
 
-  final username =
-      TextEditingController();
-
-  final password =
-      TextEditingController();
-
-  final hoten =
-      TextEditingController();
-
-  final email =
-      TextEditingController();
-
-  bool isLoading = false;
-
-  bool isObscure = true;
-
-  Future<void> register() async {
-
-    setState(() {
-      isLoading = true;
-    });
-
-    try {
-
-      final result =
-          await RegisterService.register(
-
-        username:
-            username.text.trim(),
-
-        password:
-            password.text.trim(),
-
-        hoten:
-            hoten.text.trim(),
-
-        email:
-            email.text.trim(),
-      );
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-
-        SnackBar(
-          content: Text(
-            result["message"] ??
-                "Có lỗi xảy ra",
-          ),
-        ),
-      );
-
-      if (result["status"] ==
-          "success") {
-        await UserSession.saveUserName(hoten.text.trim());
-        await UserSession.saveUserRole('student');
-        Future.delayed(
-          const Duration(seconds: 1),
-          () {
-            if (mounted) {
-              Navigator.pop(context);
-            }
-          },
-        );
-      }
-
-    } catch (e) {
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-
-        SnackBar(
-          content: Text(
-            "Lỗi: $e",
-          ),
-        ),
-      );
-    }
-
-    if (mounted) {
-
-      setState(() {
-        isLoading = false;
-      });
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime(2000),
+      firstDate: DateTime(1950),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() => _selectedDate = picked);
     }
   }
 
+  Future<void> _handleRegister() async {
+    if (_nameController.text.isEmpty || _emailController.text.isEmpty || _passwordController.text.isEmpty || _selectedDate == null) {
+      _showSnackBar('Vui lòng điền đầy đủ thông tin');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      // Fix lỗi gọi register truyền Map data
+      final result = await AuthService.register({
+        'email': _emailController.text.trim(),
+        'password': _passwordController.text.trim(),
+        'hoVaTen': _nameController.text.trim(),
+        'ngaySinh': _selectedDate!.toIso8601String(),
+        'gioiTinh': _selectedGender,
+      });
+
+      if (!mounted) return;
+
+      if (result['status'] == true || result['userId'] != null) {
+        _showSnackBar('Đăng ký thành công! Vui lòng kiểm tra mã OTP');
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => VerifyEmailScreen(email: _emailController.text.trim())),
+        );
+      } else {
+        _showSnackBar(result['error'] ?? 'Đăng ký thất bại');
+      }
+    } catch (e) {
+      _showSnackBar('Lỗi: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showSnackBar(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
   @override
-  Widget build(
-      BuildContext context) {
-
+  Widget build(BuildContext context) {
     return Scaffold(
-
-      body: Container(
-
-        width: double.infinity,
-
-        decoration:
-            const BoxDecoration(
-
-          gradient:
-              LinearGradient(
-
-            begin:
-                Alignment.topCenter,
-
-            end:
-                Alignment.bottomCenter,
-
-            colors: [
-
-              Color(0xff4A90E2),
-
-              Color(0xff357ABD),
-            ],
-          ),
-        ),
-
-        child: SafeArea(
-
-          child: Center(
-
-            child:
-                SingleChildScrollView(
-
-              child: Container(
-
-                margin:
-                    const EdgeInsets.all(
-                        20),
-
-                padding:
-                    const EdgeInsets.all(
-                        25),
-
-                decoration:
-                    BoxDecoration(
-
-                  color: Colors.white,
-
-                  borderRadius:
-                      BorderRadius.circular(
-                          25),
-
-                  boxShadow: [
-
-                    BoxShadow(
-
-                      color:
-                          Colors.black12,
-
-                      blurRadius: 10,
-
-                      offset:
-                          const Offset(
-                              0, 5),
-                    ),
-                  ],
-                ),
-
-                child: Column(
-
-                  children: [
-
-                    const Icon(
-                      Icons.app_registration,
-                      size: 80,
-                      color:
-                          Color(0xff4A90E2),
-                    ),
-
-                    const SizedBox(
-                        height: 10),
-
-                    const Text(
-
-                      "ĐĂNG KÝ\nHỌC VIÊN",
-
-                      textAlign:
-                          TextAlign.center,
-
-                      style: TextStyle(
-
-                        fontSize: 24,
-
-                        fontWeight:
-                            FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(
-                        height: 20),
-
-                    TextField(
-
-                      controller: hoten,
-
-                      decoration:
-                          InputDecoration(
-
-                        labelText:
-                            "Họ và tên",
-
-                        prefixIcon:
-                            const Icon(
-                                Icons.badge),
-
-                        border:
-                            OutlineInputBorder(
-
-                          borderRadius:
-                              BorderRadius.circular(
-                                  15),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(
-                        height: 12),
-
-                    TextField(
-
-                      controller:
-                          email,
-
-                      keyboardType:
-                          TextInputType
-                              .emailAddress,
-
-                      decoration:
-                          InputDecoration(
-
-                        labelText:
-                            "Email",
-
-                        prefixIcon:
-                            const Icon(
-                                Icons.email),
-
-                        border:
-                            OutlineInputBorder(
-
-                          borderRadius:
-                              BorderRadius.circular(
-                                  15),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(
-                        height: 12),
-
-                    TextField(
-
-                      controller:
-                          username,
-
-                      decoration:
-                          InputDecoration(
-
-                        labelText:
-                            "Tên đăng nhập",
-
-                        prefixIcon:
-                            const Icon(
-                                Icons.person),
-
-                        border:
-                            OutlineInputBorder(
-
-                          borderRadius:
-                              BorderRadius.circular(
-                                  15),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(
-                        height: 12),
-
-                    TextField(
-
-                      controller:
-                          password,
-
-                      obscureText:
-                          isObscure,
-
-                      decoration:
-                          InputDecoration(
-
-                        labelText:
-                            "Mật khẩu",
-
-                        prefixIcon:
-                            const Icon(
-                                Icons.lock),
-
-                        suffixIcon:
-                            IconButton(
-
-                          icon: Icon(
-
-                            isObscure
-
-                                ? Icons.visibility
-
-                                : Icons.visibility_off,
-                          ),
-
-                          onPressed: () {
-
-                            setState(() {
-
-                              isObscure =
-                                  !isObscure;
-                            });
-                          },
-                        ),
-
-                        border:
-                            OutlineInputBorder(
-
-                          borderRadius:
-                              BorderRadius.circular(
-                                  15),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(
-                        height: 25),
-
-                    SizedBox(
-
-                      width:
-                          double.infinity,
-
-                      height: 50,
-
-                      child:
-                          ElevatedButton(
-
-                        onPressed:
-                            isLoading
-                                ? null
-                                : register,
-
-                        style:
-                            ElevatedButton.styleFrom(
-
-                          shape:
-                              RoundedRectangleBorder(
-
-                            borderRadius:
-                                BorderRadius.circular(
-                                    15),
-                          ),
-                        ),
-
-                        child:
-                            isLoading
-
-                                ? const SizedBox(
-
-                                    width: 25,
-
-                                    height: 25,
-
-                                    child:
-                                        CircularProgressIndicator(
-                                      color:
-                                          Colors.white,
-                                      strokeWidth:
-                                          3,
-                                    ),
-                                  )
-
-                                : const Text(
-
-                                    "ĐĂNG KÝ",
-
-                                    style:
-                                        TextStyle(
-                                      fontSize:
-                                          18,
-                                    ),
-                                  ),
-                      ),
-                    ),
-
-                    const SizedBox(
-                        height: 15),
-
-                    TextButton(
-
-                      onPressed: () {
-
-                        Navigator.pop(
-                            context);
-                      },
-
-                      child: const Text(
-                        "Đã có tài khoản? Đăng nhập",
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+      appBar: AppBar(title: const Text('Đăng ký tài khoản')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Họ và tên')),
+            TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email')),
+            TextField(controller: _passwordController, obscureText: true, decoration: const InputDecoration(labelText: 'Mật khẩu')),
+            const SizedBox(height: 20),
+            ListTile(
+              title: Text(_selectedDate == null ? 'Chọn ngày sinh' : DateFormat('dd/MM/yyyy').format(_selectedDate!)),
+              trailing: const Icon(Icons.calendar_today),
+              onTap: () => _selectDate(context),
             ),
-          ),
+            DropdownButton<String>(
+              value: _selectedGender,
+              isExpanded: true,
+              items: const [
+                DropdownMenuItem(value: 'NAM', child: Text('Nam')),
+                DropdownMenuItem(value: 'NU', child: Text('Nữ')),
+              ],
+              onChanged: (val) => setState(() => _selectedGender = val!),
+            ),
+            const SizedBox(height: 30),
+            _isLoading 
+              ? const CircularProgressIndicator()
+              : ElevatedButton(onPressed: _handleRegister, child: const Text('ĐĂNG KÝ')),
+          ],
         ),
       ),
     );

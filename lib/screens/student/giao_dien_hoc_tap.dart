@@ -1,249 +1,188 @@
 import 'package:flutter/material.dart';
+import '../../dich_vu/dich_vu_bai_hoc.dart';
+import '../../dich_vu/dich_vu_khoa_hoc.dart';
+import '../../mo_hinh/khoa_hoc.dart';
+import '../../tien_ich/phien_lam_viec_nguoi_dung.dart';
 
-class StudyScreen extends StatelessWidget {
+class StudyScreen extends StatefulWidget {
   const StudyScreen({super.key});
 
   @override
+  State<StudyScreen> createState() => _StudyScreenState();
+}
+
+class _StudyScreenState extends State<StudyScreen> {
+  List<dynamic> _lessons = [];
+  List<Course> _myCourses = [];
+  bool _isLoading = true;
+  String _userName = 'Học viên';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      final name = await UserSession.getUserName();
+      final courses = await CourseService.getCourses();
+      
+      // Lấy bài học của khóa học đầu tiên để hiển thị
+      List<dynamic> lessons = [];
+      if (courses.isNotEmpty) {
+        lessons = await LessonService.getLessonsByCourse(courses[0].maKhoaHoc);
+      }
+
+      setState(() {
+        _userName = name ?? 'Học viên';
+        _myCourses = courses;
+        _lessons = lessons;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Lỗi tải bài học: $e');
+      setState(() => _isLoading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final lessons = [
-      {
-        "title": "Lesson 1: Hello!",
-        "subtitle": "Greeting and introductions",
-        "progress": 80,
-        "icon": Icons.volume_up,
-      },
-      {
-        "title": "Lesson 2: Daily routines",
-        "subtitle": "Speaking and listening",
-        "progress": 50,
-        "icon": Icons.record_voice_over,
-      },
-      {
-        "title": "Lesson 3: Shopping",
-        "subtitle": "Vocabulary and role-play",
-        "progress": 20,
-        "icon": Icons.shopping_bag,
-      },
-    ];
-
     return Scaffold(
-      backgroundColor: Colors.grey[100],
-
-      appBar: AppBar(
-        title: const Text("Bài học hôm nay"),
-        centerTitle: true,
-      ),
-
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-
-          // HEADER
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.blue,
-              borderRadius: BorderRadius.circular(20),
-            ),
-
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-
-                const Text(
-                  "Xin chào Kha ",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                const Text(
-                  "Tiếp tục học tiếng Anh hôm nay",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                LinearProgressIndicator(
-                  value: 0.65,
-                  minHeight: 8,
-                  borderRadius: BorderRadius.circular(10),
-                  backgroundColor: Colors.white54,
-                ),
-
-                const SizedBox(height: 8),
-
-                const Text(
-                  "Đã hoàn thành 65%",
-                  style: TextStyle(
-                    color: Colors.white,
+      backgroundColor: const Color(0xFFF0F4FF),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : CustomScrollView(
+              slivers: [
+                _buildSliverAppBar(),
+                SliverToBoxAdapter(child: _buildHeaderContent()),
+                SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => _buildLessonCard(_lessons[index], index),
+                      childCount: _lessons.length,
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 25),
-          const Text(
-            "Khóa học hiện tại",
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Card(
-            child: ListTile(
-              leading: const CircleAvatar(
-                child: Icon(Icons.school),
+    );
+  }
+
+  Widget _buildSliverAppBar() {
+    return SliverAppBar(
+      expandedHeight: 120,
+      floating: false,
+      pinned: true,
+      elevation: 0,
+      flexibleSpace: FlexibleSpaceBar(
+        title: Text('Học tập', style: TextStyle(color: Colors.blue.shade900, fontWeight: FontWeight.bold)),
+        background: Container(color: const Color(0xFFF0F4FF)),
+      ),
+      backgroundColor: const Color(0xFFF0F4FF),
+    );
+  }
+
+  Widget _buildHeaderContent() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              title: const Text(
-                "English Basic A1",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10)),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Xin chào, $_userName', style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                const Text('Bạn đã sẵn sàng để chinh phục tiếng Anh hôm nay chưa?', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildQuickStat('Bài học', _lessons.length.toString()),
+                    _buildQuickStat('Khóa học', _myCourses.length.toString()),
+                    _buildQuickStat('Streak', '3 ngày'),
+                  ],
                 ),
-              ),
-              subtitle: const Text(
-                "30 bài học - 10 bài kiểm tra",
-              ),
-              trailing: ElevatedButton(
-                onPressed: () {},
-                child: const Text("Vào học"),
-              ),
+              ],
             ),
           ),
-          const SizedBox(height: 25),
-          const Text(
-            "Danh sách bài học",
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 10),
-          ...lessons.map(
-            (lesson) {
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: Padding(
-                  padding: const EdgeInsets.all(15),
-
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-
-                          CircleAvatar(
-                            radius: 28,
-                            child: Icon(
-                              lesson["icon"] as IconData,
-                            ),
-                          ),
-                          const SizedBox(width: 15),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  lesson["title"].toString(),
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight:
-                                        FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 5),
-                                Text(
-                                  lesson["subtitle"].toString(),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 15),
-                      LinearProgressIndicator(
-                        value:
-                            (lesson["progress"] as int) / 100,
-                        minHeight: 8,
-                        borderRadius:
-                            BorderRadius.circular(10),
-                      ),
-                      const SizedBox(height: 10),
-                      Align(
-                        alignment: Alignment.centerRight,
-
-                        child: ElevatedButton.icon(
-
-                          icon: const Icon(
-                            Icons.play_arrow,
-                          ),
-
-                          label: const Text(
-                            "Học ngay",
-                          ),
-
-                          onPressed: () {
-
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    LessonScreen(
-                                      title:
-                                          lesson["title"]
-                                              .toString(),
-                                    ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
+          const SizedBox(height: 30),
+          const Text('Lộ trình bài học', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(_myCourses.isNotEmpty ? _myCourses[0].tenKhoaHoc : 'Khóa học của tôi', style: TextStyle(color: Colors.grey.shade600)),
         ],
       ),
     );
   }
-}
 
-class LessonScreen extends StatelessWidget {
+  Widget _buildQuickStat(String label, String value) {
+    return Column(
+      children: [
+        Text(value, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+        Text(label, style: const TextStyle(color: Colors.white60, fontSize: 12)),
+      ],
+    );
+  }
 
-  final String title;
+  Widget _buildLessonCard(dynamic lesson, int index) {
+    bool isDone = (double.tryParse(lesson['PhanTramHoanThanh']?.toString() ?? '0') ?? 0) >= 100;
 
-  const LessonScreen({
-    super.key,
-    required this.title,
-  });
-  @override
-  Widget build(BuildContext context) {
-
-    return Scaffold(
-
-      appBar: AppBar(
-        title: Text(title),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
-
-      body: const Center(
-
-        child: Text(
-          "Nội dung bài học",
-          style: TextStyle(
-            fontSize: 22,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        leading: Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: isDone ? Colors.green.shade50 : Colors.blue.shade50,
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Center(
+            child: Icon(
+              isDone ? Icons.check_circle : Icons.play_circle_filled,
+              color: isDone ? Colors.green : Colors.blue,
+              size: 28,
+            ),
           ),
         ),
-
+        title: Text(lesson['TieuDe'] ?? 'Bài học ${index + 1}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: LinearProgressIndicator(
+            value: (double.tryParse(lesson['PhanTramHoanThanh']?.toString() ?? '0') ?? 0) / 100,
+            backgroundColor: Colors.grey.shade100,
+            valueColor: AlwaysStoppedAnimation(isDone ? Colors.green : Colors.blue),
+            minHeight: 6,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+        onTap: () {
+          // Điều hướng đến chi tiết bài học (Ví dụ màn hình kéo thả bạn đã có)
+          Navigator.pushNamed(context, '/student/lesson-drag-match');
+        },
       ),
     );
   }

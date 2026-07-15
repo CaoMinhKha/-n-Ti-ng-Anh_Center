@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../duong_dan/duong_dan.dart';
 import '../../tien_ich/phien_lam_viec_nguoi_dung.dart';
+import '../../duong_dan/duong_dan.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -10,153 +10,146 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  String name = 'Học viên';
-  String role = 'student';
-  String email = 'student@example.com';
-  String phone = '0123 456 789';
+  String _name = 'Học viên';
+  String _role = 'Student';
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    _loadUserInfo();
   }
 
-  Future<void> _loadProfile() async {
-    final userName = await UserSession.getUserName();
-    final userRole = await UserSession.getUserRole();
+  Future<void> _loadUserInfo() async {
+    final name = await UserSession.getUserName();
+    final role = await UserSession.getUserRole();
     setState(() {
-      name = userName ?? name;
-      role = userRole ?? role;
+      _name = name ?? 'Học viên';
+      _role = role ?? 'Học viên';
+      _isLoading = false;
     });
-  }
-
-  Future<void> _logout() async {
-    await UserSession.logout();
-    if (!mounted) return;
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      AppRoutes.login,
-      (route) => false,
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Hồ sơ học viên')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF3D5AFE), Color(0xFF536DFE)],
-                ),
-              ),
-              child: Row(
+      backgroundColor: const Color(0xFFF8F9FE),
+      appBar: AppBar(
+        title: const Text('Hồ sơ cá nhân'),
+        actions: [
+          IconButton(icon: const Icon(Icons.edit_note_rounded), onPressed: () {}),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 36,
-                    backgroundColor: Colors.white,
-                    child: Icon(
-                      Icons.person,
-                      size: 40,
-                      color: Colors.blue.shade700,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Xin chào',
-                          style: TextStyle(color: Colors.white70, fontSize: 14),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          name,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Vai trò: ${role == 'student' ? 'Học viên' : 'Giáo viên'}',
-                          style: const TextStyle(color: Colors.white70),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _buildHeader(),
+                  const SizedBox(height: 24),
+                  _buildStatsRow(),
+                  const SizedBox(height: 32),
+                  _buildMenuSection(),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'Thông tin cá nhân',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    _infoRow('Họ và tên', name),
-                    const Divider(),
-                    _infoRow('Email', email),
-                    const Divider(),
-                    _infoRow('Số điện thoại', phone),
-                    const Divider(),
-                    _infoRow(
-                      'Vai trò',
-                      role == 'student' ? 'Học viên' : 'Giáo viên',
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Lưu ý',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Bạn có thể đăng ký thêm khóa học, xem kết quả và tiến độ học trong ứng dụng. Thông tin này được lưu cục bộ và có thể mở rộng sang dịch vụ profile thực khi tích hợp API.',
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _logout,
-              icon: const Icon(Icons.logout),
-              label: const Text('Đăng xuất'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade700,
-                minimumSize: const Size.fromHeight(50),
-              ),
-            ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.only(bottom: 30),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(40)),
+      ),
+      child: Column(
+        children: [
+          const CircleAvatar(
+            radius: 60,
+            backgroundColor: Color(0xFF4B8AF7),
+            child: Icon(Icons.person, size: 70, color: Colors.white),
+          ),
+          const SizedBox(height: 16),
+          Text(_name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(_role.toUpperCase(), style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w600, letterSpacing: 1.2, fontSize: 12)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsRow() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          _statItem('12', 'Khóa học', Colors.blue),
+          _statItem('8.5', 'Điểm TB', Colors.orange),
+          _statItem('95%', 'Chuyên cần', Colors.green),
+        ],
+      ),
+    );
+  }
+
+  Widget _statItem(String value, String label, Color color) {
+    return Expanded(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 6),
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          children: [
+            Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+            const SizedBox(height: 4),
+            Text(label, style: TextStyle(fontSize: 12, color: color.withOpacity(0.8))),
           ],
         ),
       ),
     );
   }
 
-  Widget _infoRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: const TextStyle(color: Colors.black54)),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
-      ],
+  Widget _buildMenuSection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Column(
+        children: [
+          _menuTile(Icons.assignment_ind_outlined, 'Thông tin cá nhân', () {}),
+          _menuTile(Icons.history_rounded, 'Lịch sử học tập', () => Navigator.pushNamed(context, AppRoutes.progress)),
+          _menuTile(Icons.notifications_none_rounded, 'Cài đặt thông báo', () {}),
+          _menuTile(Icons.shield_outlined, 'Bảo mật', () {}),
+          const Divider(indent: 20, endIndent: 20),
+          _menuTile(Icons.logout_rounded, 'Đăng xuất', () async {
+            await UserSession.logout();
+            if (mounted) Navigator.pushReplacementNamed(context, AppRoutes.login);
+          }, isDanger: true),
+        ],
+      ),
+    );
+  }
+
+  Widget _menuTile(IconData icon, String title, VoidCallback onTap, {bool isDanger = false}) {
+    return ListTile(
+      onTap: onTap,
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isDanger ? Colors.red.shade50 : Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, color: isDanger ? Colors.red : Colors.grey.shade700, size: 22),
+      ),
+      title: Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: isDanger ? Colors.red : Colors.black87)),
+      trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
     );
   }
 }

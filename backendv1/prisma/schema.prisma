@@ -1,0 +1,611 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model baihoc {
+  BaiHocID     Int               @id @default(autoincrement())
+  KhoaHocID    Int
+  TenBaiHoc    String            @db.VarChar(200)
+  MoTa         String?           @db.Text
+  ThuTuHienThi Int?              @default(1)
+  TrangThai    baihoc_TrangThai? @default(HIEN)
+  CreatedAt    DateTime?         @default(now()) @db.DateTime(0)
+  UpdatedAt    DateTime?         @default(now()) @db.DateTime(0)
+  khoahoc      khoahoc           @relation(fields: [KhoaHocID], references: [KhoaHocID], onDelete: Cascade, map: "FK_BaiHoc_KhoaHoc")
+  phanbaihoc   phanbaihoc[]
+
+  @@unique([KhoaHocID, TenBaiHoc])
+  @@index([KhoaHocID], map: "IDX_BaiHoc_KhoaHoc")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model baikiemtra {
+  BaiKiemTraID      Int                   @id @default(autoincrement())
+  PhanBaiHocID      Int
+  TenBaiKiemTra     String                @db.VarChar(200)
+  ThoiGianBatDau    DateTime?             @db.DateTime(0)
+  ThoiGianLamBai    Int
+  DiemDat           Decimal?              @default(0.00) @db.Decimal(5, 2)
+  DiemMax           Decimal?              @default(100.00) @db.Decimal(5, 2)
+  TrangThai         baikiemtra_TrangThai? @default(HIEN)
+  CreatedAt         DateTime?             @default(now()) @db.DateTime(0)
+  UpdatedAt         DateTime?             @default(now()) @db.DateTime(0)
+  phanbaihoc        phanbaihoc            @relation(fields: [PhanBaiHocID], references: [PhanBaiHocID], onDelete: Cascade, map: "FK_BaiKiemTra_PhanBaiHoc")
+  baikiemtra_cauhoi baikiemtra_cauhoi[]
+  bailam            bailam[]
+
+  @@index([PhanBaiHocID], map: "IDX_BaiKiemTra_PhanBaiHoc")
+  @@map("baikiemtra")
+}
+
+model baikiemtra_cauhoi {
+  BaiKiemTraID Int
+  CauHoiID     Int
+  ThuTuHienThi Int?       @default(1)
+  baikiemtra   baikiemtra @relation(fields: [BaiKiemTraID], references: [BaiKiemTraID], onDelete: Cascade, map: "FK_BKTCH_BaiKiemTra")
+  cauhoi       cauhoi     @relation(fields: [CauHoiID], references: [CauHoiID], onDelete: Cascade, map: "FK_BKTCH_CauHoi")
+
+  @@id([BaiKiemTraID, CauHoiID])
+  @@index([CauHoiID], map: "IDX_BKTCH_CauHoi")
+}
+
+model bailam {
+  BaiLamID       Int               @id @default(autoincrement())
+  BaiKiemTraID   Int
+  HocVienID      Int
+  LopHocID       Int
+  ThoiGianBatDau DateTime          @db.DateTime(0)
+  ThoiGianNop    DateTime?         @db.DateTime(0)
+  TongDiem       Decimal?          @default(0.00) @db.Decimal(5, 2)
+  TrangThai      bailam_TrangThai? @default(HET_GIO)
+  CreatedAt      DateTime?         @default(now()) @db.DateTime(0)
+  UpdatedAt      DateTime?         @default(now()) @db.DateTime(0)
+  baikiemtra     baikiemtra        @relation(fields: [BaiKiemTraID], references: [BaiKiemTraID], onDelete: Cascade, map: "FK_BaiLam_BaiKiemTra")
+  hocvien        hocvien           @relation(fields: [HocVienID], references: [HocVienID], onDelete: Cascade, map: "FK_BaiLam_HocVien")
+  lophoc         lophoc            @relation(fields: [LopHocID], references: [LopHocID], onDelete: Cascade, map: "FK_BaiLam_LopHoc")
+  bailam_chitiet bailam_chitiet[]
+
+  @@index([BaiKiemTraID], map: "IDX_BaiLam_BaiKiemTra")
+  @@index([HocVienID], map: "IDX_BaiLam_HocVien")
+  @@index([LopHocID], map: "IDX_BaiLam_LopHoc")
+}
+
+model bailam_chitiet {
+  BaiLamID      Int
+  CauHoiID      Int
+  DapAnID       Int?
+  NoiDungTraLoi String?  @db.Text
+  LaDung        Boolean? @default(false)
+  bailam        bailam   @relation(fields: [BaiLamID], references: [BaiLamID], onDelete: Cascade, map: "FK_BLCT_BaiLam")
+  cauhoi        cauhoi   @relation(fields: [CauHoiID], references: [CauHoiID], onDelete: Cascade, map: "FK_BLCT_CauHoi")
+  dapan         dapan?   @relation(fields: [DapAnID], references: [DapAnID], map: "FK_BLCT_DapAn")
+
+  @@id([BaiLamID, CauHoiID])
+  @@index([DapAnID], map: "FK_BLCT_DapAn")
+  @@index([CauHoiID], map: "IDX_BLCT_CauHoi")
+}
+
+model buoihoc {
+  BuoiHocID        Int                @id @default(autoincrement())
+  LopHocID         Int
+  LichHocID        Int
+  CaHocID          Int
+  PhongHocID       Int?
+  NgayHoc          DateTime           @db.Date
+  TrangThai        buoihoc_TrangThai? @default(CHUA_HOC)
+  CreatedAt        DateTime?          @default(now()) @db.DateTime(0)
+  UpdatedAt        DateTime?          @default(now()) @db.DateTime(0)
+  cahoc            cahoc              @relation(fields: [CaHocID], references: [CaHocID], map: "FK_BuoiHoc_CaHoc")
+  lichhoc          lichhoc            @relation(fields: [LichHocID], references: [LichHocID], map: "FK_BuoiHoc_LichHoc")
+  lophoc           lophoc             @relation(fields: [LopHocID], references: [LopHocID], onDelete: Cascade, map: "FK_BuoiHoc_LopHoc")
+  phonghoc         phonghoc?          @relation(fields: [PhongHocID], references: [PhongHocID], map: "FK_BuoiHoc_PhongHoc")
+  hocvien_diemdanh hocvien_diemdanh[]
+  madiemdanh       madiemdanh[]
+
+  @@index([CaHocID], map: "FK_BuoiHoc_CaHoc")
+  @@index([LichHocID], map: "FK_BuoiHoc_LichHoc")
+  @@index([PhongHocID], map: "FK_BuoiHoc_PhongHoc")
+  @@index([LopHocID], map: "IDX_BuoiHoc_LopHoc")
+  @@index([NgayHoc], map: "IDX_BuoiHoc_NgayHoc")
+}
+
+model cahoc {
+  CaHocID    Int              @id @default(autoincrement())
+  MaCa       String           @unique(map: "UQ_CaHoc_MaCa") @db.VarChar(20)
+  TenCa      String           @db.VarChar(100)
+  GioBatDau  DateTime         @db.Time(0)
+  GioKetThuc DateTime         @db.Time(0)
+  TrangThai  cahoc_TrangThai? @default(HOAT_DONG)
+  buoihoc    buoihoc[]
+  lichhoc    lichhoc[]
+}
+
+model cauhoi {
+  CauHoiID               Int                 @id @default(autoincrement())
+  LoaiCauHoi             cauhoi_LoaiCauHoi   @default(TRAC_NGHIEM_MOT_DAP_AN)
+  NoiDungText            String?             @db.Text
+  NoiDungUrl             String?             @db.VarChar(500)
+  ThuTuHienThi           Int?                @default(1)
+  TrangThai              cauhoi_TrangThai    @default(HIEN)
+  CreatedAt              DateTime?           @default(now()) @db.DateTime(0)
+  UpdatedAt              DateTime?           @default(now()) @updatedAt @db.DateTime(0)
+  DuLieuPhu              String?             @db.LongText
+  TieuDe                 String?             @db.VarChar(255)
+  CauHoiChaID            Int?
+  phanbaihocPhanBaiHocID Int?
+  baikiemtra_cauhoi      baikiemtra_cauhoi[]
+  bailam_chitiet         bailam_chitiet[]
+  cauHoiCha              cauhoi?             @relation("CauHoiHierarchy", fields: [CauHoiChaID], references: [CauHoiID])
+  cauHoiCon              cauhoi[]            @relation("CauHoiHierarchy")
+  phanbaihoc             phanbaihoc?         @relation(fields: [phanbaihocPhanBaiHocID], references: [PhanBaiHocID])
+  dapan                  dapan[]
+  phanbaihoc_cauhoi      phanbaihoc_cauhoi[]
+
+  @@index([CauHoiChaID])
+  @@index([LoaiCauHoi])
+  @@index([TrangThai])
+  @@index([phanbaihocPhanBaiHocID], map: "cauhoi_phanbaihocPhanBaiHocID_fkey")
+  @@map("cauhoi")
+}
+
+model danhmuc {
+  DanhMucID     Int                @id @default(autoincrement())
+  TenDanhMuc    String             @unique @db.VarChar(100)
+  MoTa          String?            @db.Text
+  ThuTuHienThi  Int?               @default(0)
+  DanhMucChaID  Int?
+  TrangThai     danhmuc_TrangThai? @default(HOAT_DONG)
+  danhMucCha    danhmuc?           @relation("danhmucTodanhmuc", fields: [DanhMucChaID], references: [DanhMucID], map: "FK_DanhMuc_DanhMucCha")
+  other_danhmuc danhmuc[]          @relation("danhmucTodanhmuc")
+  khoahoc       khoahoc[]
+  phanbaihocs   phanbaihoc[]
+
+  @@index([DanhMucChaID], map: "IDX_DanhMuc_Cha")
+  @@index([TenDanhMuc], map: "IDX_DanhMuc_TenDanhMuc")
+}
+
+model dapan {
+  DapAnID        Int              @id @default(autoincrement())
+  CauHoiID       Int
+  NoiDungText    String?          @db.Text
+  NoiDungUrl     String?          @db.VarChar(500)
+  LaDapAnDung    Boolean?         @default(false)
+  ThuTuHienThi   Int?             @default(1)
+  GiaTriKhop     String?          @db.VarChar(255)
+  bailam_chitiet bailam_chitiet[]
+  cauhoi         cauhoi           @relation(fields: [CauHoiID], references: [CauHoiID], onDelete: Cascade)
+
+  @@index([CauHoiID], map: "IDX_DapAn_CauHoi")
+  @@map("dapan")
+}
+
+model dotkhaigiang {
+  DotKhaiGiangID Int                     @id @default(autoincrement())
+  MaDot          String                  @unique(map: "UQ_DotKhaiGiang_MaDot") @db.VarChar(30)
+  TenDot         String                  @db.VarChar(200)
+  NgayMoDangKy   DateTime                @db.Date
+  NgayDongDangKy DateTime                @db.Date
+  MoTa           String?                 @db.Text
+  TrangThai      dotkhaigiang_TrangThai? @default(SAP_MO)
+  CreatedAt      DateTime?               @default(now()) @db.DateTime(0)
+  UpdatedAt      DateTime?               @default(now()) @db.DateTime(0)
+  lophoc         lophoc[]
+
+  @@index([MaDot], map: "IDX_DotKhaiGiang_MaDot")
+}
+
+model giaovien {
+  GiaoVienID Int          @id @default(autoincrement())
+  TaiKhoanID Int          @unique(map: "UQ_GiaoVien_TaiKhoan")
+  MaGiaoVien String       @unique(map: "UQ_GiaoVien_MaGiaoVien") @db.VarChar(30)
+  CreatedAt  DateTime?    @default(now()) @db.DateTime(0)
+  taikhoan   taikhoan     @relation(fields: [TaiKhoanID], references: [TaiKhoanID], onDelete: Cascade, map: "FK_GiaoVien_TaiKhoan")
+  lophoc     lophoc[]
+  madiemdanh madiemdanh[]
+
+  @@index([MaGiaoVien], map: "IDX_GiaoVien_MaGiaoVien")
+}
+
+model hocvien {
+  HocVienID        Int                @id @default(autoincrement())
+  TaiKhoanID       Int                @unique(map: "UQ_HocVien_TaiKhoan")
+  MaHocVien        String             @unique(map: "UQ_HocVien_MaHocVien") @db.VarChar(30)
+  CreatedAt        DateTime?          @default(now()) @db.DateTime(0)
+  bailam           bailam[]
+  taikhoan         taikhoan           @relation(fields: [TaiKhoanID], references: [TaiKhoanID], onDelete: Cascade, map: "FK_HocVien_TaiKhoan")
+  hocvien_diemdanh hocvien_diemdanh[]
+  hocvien_lophoc   hocvien_lophoc[]
+  ketquahoctap     ketquahoctap[]
+  tiendohoctap     tiendohoctap[]
+
+  @@index([MaHocVien], map: "IDX_HocVien_MaHocVien")
+}
+
+model hocvien_diemdanh {
+  HocVienID         Int
+  BuoiHocID         Int
+  TrangThaiDiemDanh hocvien_diemdanh_TrangThaiDiemDanh? @default(VANG_KHONG_PHEP)
+  ThoiGianCheckIn   DateTime?                           @db.DateTime(0)
+  GhiChu            String?                             @db.VarChar(255)
+  buoihoc           buoihoc                             @relation(fields: [BuoiHocID], references: [BuoiHocID], onDelete: Cascade, map: "FK_HVDD_BuoiHoc")
+  hocvien           hocvien                             @relation(fields: [HocVienID], references: [HocVienID], onDelete: Cascade, map: "FK_HVDD_HocVien")
+
+  @@id([HocVienID, BuoiHocID])
+  @@index([BuoiHocID], map: "IDX_HVDD_BuoiHoc")
+}
+
+model hocvien_lophoc {
+  HocVien_LopHocID Int                       @id @default(autoincrement())
+  HocVienID        Int
+  LopHocID         Int
+  HocPhi           Decimal?                  @default(0.00) @db.Decimal(12, 2)
+  NgayDangKy       DateTime?                 @default(now()) @db.DateTime(0)
+  DongHocPhi       Boolean?                  @default(false)
+  TrangThai        hocvien_lophoc_TrangThai? @default(CHO_DUYET)
+  hocvien          hocvien                   @relation(fields: [HocVienID], references: [HocVienID], onDelete: Cascade, map: "FK_HVLH_HocVien")
+  lophoc           lophoc                    @relation(fields: [LopHocID], references: [LopHocID], onDelete: Cascade, map: "FK_HVLH_LopHoc")
+
+  @@unique([HocVienID, LopHocID], map: "UQ_HocVien_LopHoc")
+  @@index([LopHocID], map: "IDX_HVLH_LopHoc")
+}
+
+model ketquahoctap {
+  KetQuaHocTapID Int                   @id @default(autoincrement())
+  HocVienID      Int
+  LopHocID       Int
+  DiemChuyenCan  Decimal?              @default(0.00) @db.Decimal(5, 2)
+  DiemBaiTap     Decimal?              @default(0.00) @db.Decimal(5, 2)
+  DiemKiemTra    Decimal?              @default(0.00) @db.Decimal(5, 2)
+  TongDiem       Decimal?              @default(0.00) @db.Decimal(5, 2)
+  XepLoai        ketquahoctap_XepLoai? @default(KHONG_DAT)
+  NgayCapNhat    DateTime?             @default(now()) @db.DateTime(0)
+  hocvien        hocvien               @relation(fields: [HocVienID], references: [HocVienID], onDelete: Cascade, map: "FK_KQHT_HocVien")
+  lophoc         lophoc                @relation(fields: [LopHocID], references: [LopHocID], onDelete: Cascade, map: "FK_KQHT_LopHoc")
+
+  @@unique([HocVienID, LopHocID], map: "UQ_KQHT")
+  @@index([HocVienID], map: "IDX_KQHT_HocVien")
+  @@index([LopHocID], map: "IDX_KQHT_LopHoc")
+}
+
+model khoahoc {
+  KhoaHocID  Int                @id @default(autoincrement())
+  TenKhoaHoc String             @unique @db.VarChar(200)
+  TrinhDoID  Int
+  HocPhi     Decimal?           @default(0.00) @db.Decimal(12, 2)
+  MoTa       String?            @db.Text
+  TrangThai  khoahoc_TrangThai? @default(DANG_MO)
+  IsDeleted  Boolean?           @default(false)
+  CreatedAt  DateTime?          @default(now()) @db.DateTime(0)
+  UpdatedAt  DateTime?          @default(now()) @db.DateTime(0)
+  baihoc     baihoc[]
+  trinhdo    danhmuc            @relation(fields: [TrinhDoID], references: [DanhMucID], map: "FK_KhoaHoc_TrinhDo")
+  lophoc     lophoc[]
+
+  @@index([TenKhoaHoc], map: "IDX_KhoaHoc_Ten")
+  @@index([TrinhDoID], map: "IDX_KhoaHoc_TrinhDo")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model lichhoc {
+  LichHocID    Int                @id @default(autoincrement())
+  LopHocID     Int
+  ThuTrongTuan Int                @db.TinyInt
+  CaHocID      Int
+  PhongHocID   Int?
+  NgayApDung   DateTime           @db.Date
+  NgayKetThuc  DateTime           @db.Date
+  TrangThai    lichhoc_TrangThai? @default(HOAT_DONG)
+  CreatedAt    DateTime?          @default(now()) @db.DateTime(0)
+  UpdatedAt    DateTime?          @default(now()) @db.DateTime(0)
+  buoihoc      buoihoc[]
+  cahoc        cahoc              @relation(fields: [CaHocID], references: [CaHocID], map: "FK_LichHoc_CaHoc")
+  lophoc       lophoc             @relation(fields: [LopHocID], references: [LopHocID], onDelete: Cascade, map: "FK_LichHoc_LopHoc")
+  phonghoc     phonghoc?          @relation(fields: [PhongHocID], references: [PhongHocID], map: "FK_LichHoc_PhongHoc")
+
+  @@index([CaHocID], map: "FK_LichHoc_CaHoc")
+  @@index([PhongHocID], map: "FK_LichHoc_PhongHoc")
+  @@index([LopHocID], map: "IDX_LichHoc_LopHoc")
+}
+
+model lophoc {
+  LopHocID       Int                @id @default(autoincrement())
+  DotKhaiGiangID Int
+  KhoaHocID      Int
+  GiaoVienID     Int
+  TenLopHoc      String             @unique @db.VarChar(200)
+  HinhThucHoc    lophoc_HinhThucHoc
+  HocPhi         Decimal?           @default(0.00) @db.Decimal(12, 2)
+  SiSoToiDa      Int?               @default(30)
+  NgayBatDau     DateTime           @db.Date
+  NgayKetThuc    DateTime           @db.Date
+  TrangThai      lophoc_TrangThai?  @default(SAP_KHAI_GIANG)
+  CreatedAt      DateTime?          @default(now()) @db.DateTime(0)
+  UpdatedAt      DateTime?          @default(now()) @db.DateTime(0)
+  bailam         bailam[]
+  buoihoc        buoihoc[]
+  hocvien_lophoc hocvien_lophoc[]
+  ketquahoctap   ketquahoctap[]
+  lichhoc        lichhoc[]
+  dotkhaigiang   dotkhaigiang       @relation(fields: [DotKhaiGiangID], references: [DotKhaiGiangID], map: "FK_LopHoc_DotKhaiGiang")
+  giaovien       giaovien           @relation(fields: [GiaoVienID], references: [GiaoVienID], map: "FK_LopHoc_GiaoVien")
+  khoahoc        khoahoc            @relation(fields: [KhoaHocID], references: [KhoaHocID], map: "FK_LopHoc_KhoaHoc")
+  tiendohoctap   tiendohoctap[]
+
+  @@index([DotKhaiGiangID], map: "FK_LopHoc_DotKhaiGiang")
+  @@index([GiaoVienID], map: "IDX_LopHoc_GiaoVien")
+  @@index([KhoaHocID], map: "IDX_LopHoc_KhoaHoc")
+}
+
+model madiemdanh {
+  MaDiemDanhID      Int                   @id @default(autoincrement())
+  BuoiHocID         Int
+  GiaoVienID        Int
+  NoiDungMaDiemDanh String                @db.VarChar(100)
+  ThoiGianHetHan    DateTime              @db.DateTime(0)
+  TrangThai         madiemdanh_TrangThai? @default(DANG_HOAT_DONG)
+  CreatedAt         DateTime?             @default(now()) @db.DateTime(0)
+  buoihoc           buoihoc               @relation(fields: [BuoiHocID], references: [BuoiHocID], onDelete: Cascade, map: "FK_MaDiemDanh_BuoiHoc")
+  giaovien          giaovien              @relation(fields: [GiaoVienID], references: [GiaoVienID], map: "FK_MaDiemDanh_GiaoVien")
+
+  @@index([GiaoVienID], map: "FK_MaDiemDanh_GiaoVien")
+  @@index([BuoiHocID], map: "IDX_MaDiemDanh_BuoiHoc")
+}
+
+model otp_xacthuc {
+  OtpID      Int                 @id @default(autoincrement())
+  TaiKhoanID Int
+  LoaiOTP    otp_xacthuc_LoaiOTP
+  MaOTP      String              @db.VarChar(10)
+  DaSuDung   Boolean?            @default(false)
+  NgayHetHan DateTime            @db.DateTime(0)
+  VoHieuHoa  Boolean?            @default(false)
+  CreatedAt  DateTime?           @default(now()) @db.DateTime(0)
+  taikhoan   taikhoan            @relation(fields: [TaiKhoanID], references: [TaiKhoanID], onDelete: Cascade, map: "FK_OTP_TaiKhoan")
+
+  @@index([TaiKhoanID], map: "IDX_OTP_TaiKhoan")
+}
+
+model phanbaihoc {
+  PhanBaiHocID      Int                   @id @default(autoincrement())
+  BaiHocID          Int
+  TenPhanBaiHoc     String                @db.VarChar(200)
+  TieuDe            String?               @db.VarChar(255)
+  VideoUrl          String?               @db.VarChar(500)
+  ThuTuHienThi      Int?                  @default(1)
+  TrangThai         phanbaihoc_TrangThai? @default(HIEN)
+  CreatedAt         DateTime?             @default(now()) @db.DateTime(0)
+  UpdatedAt         DateTime?             @default(now()) @db.DateTime(0)
+  LoaiPhanBaiHocID  Int
+  baikiemtra        baikiemtra[]
+  cauhoi            cauhoi[]
+  baihoc            baihoc                @relation(fields: [BaiHocID], references: [BaiHocID], onDelete: Cascade, map: "FK_PhanBaiHoc_BaiHoc")
+  loaiPhanBaiHoc    danhmuc               @relation(fields: [LoaiPhanBaiHocID], references: [DanhMucID], map: "FK_PhanBaiHoc_DanhMuc")
+  phanbaihocCauhois phanbaihoc_cauhoi[]
+  tiendohoctap      tiendohoctap[]
+
+  @@index([BaiHocID], map: "IDX_PhanBaiHoc_BaiHoc")
+  @@index([LoaiPhanBaiHocID], map: "FK_PhanBaiHoc_DanhMuc")
+}
+
+model phanbaihoc_cauhoi {
+  PhanBaiHocID Int
+  CauHoiID     Int
+  ThuTuHienThi Int?       @default(1)
+  cauhoi       cauhoi     @relation(fields: [CauHoiID], references: [CauHoiID], onDelete: Cascade)
+  phanbaihoc   phanbaihoc @relation(fields: [PhanBaiHocID], references: [PhanBaiHocID], onDelete: Cascade)
+
+  @@id([PhanBaiHocID, CauHoiID])
+  @@index([CauHoiID])
+  @@index([PhanBaiHocID])
+  @@map("phanbaihoc_cauhoi")
+}
+
+model phonghoc {
+  PhongHocID Int                 @id @default(autoincrement())
+  MaPhong    String              @unique(map: "UQ_PhongHoc_MaPhong") @db.VarChar(20)
+  TenPhong   String              @db.VarChar(100)
+  SucChua    Int
+  ToaNha     String?             @db.VarChar(100)
+  TrangThai  phonghoc_TrangThai? @default(TRONG)
+  buoihoc    buoihoc[]
+  lichhoc    lichhoc[]
+}
+
+model taikhoan {
+  TaiKhoanID           Int                 @id @default(autoincrement())
+  Email                String              @unique(map: "UQ_TaiKhoan_Email") @db.VarChar(255)
+  MatKhauHash          String              @db.VarChar(255)
+  VaiTro               taikhoan_VaiTro
+  HoVaTen              String              @db.VarChar(100)
+  NgaySinh             DateTime?           @db.Date
+  GioiTinh             taikhoan_GioiTinh?  @default(KHAC)
+  AvatarUrl            String?             @db.VarChar(500)
+  EmailVerifiedAt      DateTime?           @db.DateTime(0)
+  RefreshToken         String?             @db.VarChar(500)
+  RefreshTokenExpireAt DateTime?           @db.DateTime(0)
+  TrangThai            taikhoan_TrangThai? @default(CHO_XAC_THUC)
+  IsDeleted            Boolean?            @default(false)
+  CreatedAt            DateTime?           @default(now()) @db.DateTime(0)
+  UpdatedAt            DateTime?           @default(now()) @db.DateTime(0)
+  giaovien             giaovien?
+  hocvien              hocvien?
+  otp_xacthuc          otp_xacthuc[]
+
+  @@index([Email], map: "IDX_TaiKhoan_Email")
+  @@index([TrangThai], map: "IDX_TaiKhoan_TrangThai")
+  @@index([VaiTro], map: "IDX_TaiKhoan_VaiTro")
+}
+
+model tiendohoctap {
+  HocVienID        Int
+  LopHocID         Int
+  PhanBaiHocID     Int
+  TongSoCauHoi     Int?                    @default(0)
+  TongSoCauHoiDung Int?                    @default(0)
+  TrangThai        tiendohoctap_TrangThai? @default(CHUA_BAT_DAU)
+  NgayBatDau       DateTime?               @db.DateTime(0)
+  NgayHoanThanh    DateTime?               @db.DateTime(0)
+  CreatedAt        DateTime?               @default(now()) @db.DateTime(0)
+  UpdatedAt        DateTime?               @default(now()) @db.DateTime(0)
+  hocvien          hocvien                 @relation(fields: [HocVienID], references: [HocVienID], onDelete: Cascade, map: "FK_TDHT_HocVien")
+  lophoc           lophoc                  @relation(fields: [LopHocID], references: [LopHocID], onDelete: Cascade, map: "FK_TDHT_LopHoc")
+  phanbaihoc       phanbaihoc              @relation(fields: [PhanBaiHocID], references: [PhanBaiHocID], onDelete: Cascade, map: "FK_TDHT_PhanBaiHoc")
+
+  @@id([HocVienID, LopHocID, PhanBaiHocID])
+  @@index([LopHocID], map: "IDX_TDHT_LopHoc")
+  @@index([PhanBaiHocID], map: "IDX_TDHT_PhanBaiHoc")
+  @@index([TrangThai], map: "IDX_TDHT_TrangThai")
+}
+
+enum cauhoi_LoaiCauHoi {
+  TRAC_NGHIEM_MOT_DAP_AN
+  DUNG_SAI
+  TRAC_NGHIEM_NHIEU_DAP_AN
+  DIEN_VAO_CHO_TRONG
+  NOI_CAP
+  SAP_XEP
+  PHAN_LOAI
+  DOC_HIEU
+  NGHE_HIEU
+  XEM_HINH
+  TINH_HUONG
+}
+
+enum hocvien_diemdanh_TrangThaiDiemDanh {
+  CO_MAT
+  VANG_CO_PHEP
+  VANG_KHONG_PHEP
+  DI_MUON
+}
+
+enum otp_xacthuc_LoaiOTP {
+  DANG_KY
+  QUEN_MAT_KHAU
+}
+
+enum taikhoan_VaiTro {
+  ADMIN
+  GIAO_VIEN
+  HOC_VIEN
+}
+
+enum baihoc_TrangThai {
+  AN
+  HIEN
+}
+
+enum cahoc_TrangThai {
+  HOAT_DONG
+  NGUNG_HOAT_DONG
+}
+
+enum danhmuc_TrangThai {
+  HOAT_DONG
+  NGUNG_HOAT_DONG
+}
+
+enum khoahoc_TrangThai {
+  SAP_MO
+  DANG_MO
+  TAM_DUNG
+}
+
+enum lophoc_HinhThucHoc {
+  ONLLINE
+  OFFLINE
+}
+
+enum madiemdanh_TrangThai {
+  DANG_HOAT_DONG
+  HET_HAN
+  DA_DONG
+}
+
+enum phonghoc_TrangThai {
+  TRONG
+  DANG_SU_DUNG
+  BAO_TRI
+}
+
+enum tiendohoctap_TrangThai {
+  CHUA_BAT_DAU
+  DANG_HOC
+  HOAN_THANH
+}
+
+enum buoihoc_TrangThai {
+  CHUA_HOC
+  DANG_HOC
+  DA_HOC
+}
+
+enum dotkhaigiang_TrangThai {
+  SAP_MO
+  DANG_MO
+  DA_DONG
+}
+
+enum hocvien_lophoc_TrangThai {
+  CHO_DUYET
+  DA_DUYET
+  TU_CHOI
+}
+
+enum taikhoan_GioiTinh {
+  NAM
+  NU
+  KHAC
+}
+
+enum baikiemtra_TrangThai {
+  AN
+  HIEN
+}
+
+enum bailam_TrangThai {
+  DANG_LAM
+  DA_NOP
+  HET_GIO
+}
+
+enum cauhoi_TrangThai {
+  AN
+  HIEN
+}
+
+enum ketquahoctap_XepLoai {
+  XUAT_SAC
+  GIOI
+  KHA
+  TRUNG_BINH
+  KHONG_DAT
+}
+
+enum lichhoc_TrangThai {
+  HOAT_DONG
+  TAM_DUNG
+}
+
+enum phanbaihoc_TrangThai {
+  AN
+  HIEN
+}
+
+enum lophoc_TrangThai {
+  SAP_KHAI_GIANG
+  DANG_HOC
+  DA_KET_THUC
+  DA_HUY
+}
+
+enum taikhoan_TrangThai {
+  HOAT_DONG
+  KHOA
+  CHO_XAC_THUC
+}

@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'duong_dan/duong_dan.dart';
 
 void main() {
-  runApp(
-    const MyApp(),
-  );
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -12,71 +10,55 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF5E35B1),
-      brightness: Brightness.light,
-    );
-
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      themeMode: ThemeMode.light,
+      title: 'English Center',
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: colorScheme,
-        scaffoldBackgroundColor: const Color(0xFFF4F1FF),
-        appBarTheme: AppBarTheme(
-          backgroundColor: colorScheme.primary,
-          foregroundColor: colorScheme.onPrimary,
-          elevation: 2,
-          surfaceTintColor: colorScheme.primary,
-          centerTitle: false,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF4B8AF7),
+          primary: const Color(0xFF4B8AF7),
+          secondary: const Color(0xFF6A11CB),
+          surface: Colors.white,
+        ),
+        scaffoldBackgroundColor: const Color(0xFFF8F9FE),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+          centerTitle: true,
           titleTextStyle: TextStyle(
-            color: colorScheme.onPrimary,
-            fontSize: 20,
             fontWeight: FontWeight.bold,
+            fontSize: 20,
+            color: Colors.black,
           ),
         ),
         cardTheme: CardThemeData(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: BorderSide(color: Colors.grey.shade100),
+          ),
           color: Colors.white,
-          elevation: 4,
-          shadowColor: const Color.fromRGBO(0, 0, 0, 0.08),
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: colorScheme.primary,
-            foregroundColor: colorScheme.onPrimary,
-            disabledBackgroundColor: Colors.grey.shade300,
-            disabledForegroundColor: Colors.grey.shade700,
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            elevation: 2,
-          ),
-        ),
-        outlinedButtonTheme: OutlinedButtonThemeData(
-          style: OutlinedButton.styleFrom(
-            foregroundColor: colorScheme.primary,
-            side: BorderSide(color: colorScheme.primary),
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            backgroundColor: const Color(0xFF4B8AF7),
+            foregroundColor: Colors.white,
+            minimumSize: const Size(double.infinity, 54),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            elevation: 0,
             textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
         ),
-        textTheme: const TextTheme(
-          bodyLarge: TextStyle(color: Color(0xFF1F1F1F), fontSize: 16, height: 1.5),
-          bodyMedium: TextStyle(color: Color(0xFF2B2B2B), fontSize: 15, height: 1.5),
-          titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1F1F1F)),
-          titleMedium: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF1F1F1F)),
-          headlineSmall: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1F1F1F)),
-        ),
-        dividerColor: Colors.grey.shade300,
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+          fillColor: Colors.grey.shade50,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         ),
       ),
       initialRoute: AppRoutes.login,

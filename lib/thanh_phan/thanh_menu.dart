@@ -1,6 +1,6 @@
 ﻿import 'package:flutter/material.dart';
-import '../tien_ich/phien_lam_viec_nguoi_dung.dart';
 import '../duong_dan/duong_dan.dart';
+import '../tien_ich/phien_lam_viec_nguoi_dung.dart';
 
 class ThanhMenu extends StatefulWidget {
   const ThanhMenu({super.key});
@@ -10,162 +10,114 @@ class ThanhMenu extends StatefulWidget {
 }
 
 class _ThanhMenuState extends State<ThanhMenu> {
-  String userName = "Người dùng";
+  String? role;
+  String name = 'Người dùng';
 
   @override
   void initState() {
     super.initState();
-    _loadUserName();
+    _loadInfo();
   }
 
-  Future<void> _loadUserName() async {
-    final name = await UserSession.getUserName();
+  Future<void> _loadInfo() async {
+    final r = await UserSession.getUserRole();
+    final n = await UserSession.getUserName();
     setState(() {
-      userName = name ?? "Người dùng";
+      role = r;
+      name = n ?? 'Người dùng';
     });
-  }
-
-  String _homeRouteForRole(String? role) {
-    if (role == 'admin') return AppRoutes.adminHome;
-    if (role == 'teacher') return AppRoutes.teacherHome;
-    if (role == 'student') return AppRoutes.studentHome;
-    return AppRoutes.home;
   }
 
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: FutureBuilder<String?>(
-        future: UserSession.getUserRole(),
-        builder: (context, snapshot) {
-          final role = snapshot.data;
-          final homeRoute = _homeRouteForRole(role);
-
-          return ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              // ============ HEADER =============
-              UserAccountsDrawerHeader(
-                currentAccountPicture: CircleAvatar(
-                  backgroundColor: Colors.blue.shade100,
-                  child: const Icon(
-                    Icons.person,
-                    size: 40,
-                    color: Colors.blue,
-                  ),
-                ),
-                accountName: Text(
-                  userName,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                accountEmail: const Text("app_english_center"),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade600,
-                ),
-              ),
-
-              // ============ MENU ITEMS =============
-              ListTile(
-                leading: const Icon(Icons.dashboard, color: Colors.blue),
-                title: const Text("Trang chủ"),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, homeRoute);
-                },
-              ),
-
-              if (role == 'student')
-                ListTile(
-                  leading: const Icon(Icons.app_registration, color: Colors.green),
-                  title: const Text("Đăng ký khóa học"),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.pushNamed(context, AppRoutes.studentHome);
-                  },
-                ),
-
-              ListTile(
-                leading: const Icon(Icons.class_, color: Colors.orange),
-                title: const Text("Lớp học"),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, homeRoute);
-                },
-              ),
-
-              if (role == 'student')
-                ListTile(
-                  leading: const Icon(Icons.book, color: Colors.purple),
-                  title: const Text("Bài học"),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.pushNamed(context, AppRoutes.lessonDragMatch);
-                  },
-                ),
-
-              if (role == 'student' || role == 'teacher')
-                ListTile(
-                  leading: const Icon(Icons.quiz, color: Colors.red),
-                  title: const Text("Bài kiểm tra"),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.pushNamed(context, homeRoute);
-                  },
-                ),
-
-              ListTile(
-                leading: const Icon(Icons.bar_chart, color: Colors.teal),
-                title: const Text("Kết quả"),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, AppRoutes.progress);
-                },
-              ),
-
-              ListTile(
-                leading: const Icon(Icons.trending_up, color: Colors.indigo),
-                title: const Text("Tiến độ học tập"),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, AppRoutes.progress);
-                },
-              ),
-
-              ListTile(
-                leading: const Icon(Icons.person, color: Colors.cyan),
-                title: const Text("Hồ sơ"),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, AppRoutes.profile);
-                },
-              ),
-
-              const Divider(thickness: 2),
-
-              // ============ LOGOUT =============
-              ListTile(
-                leading: const Icon(Icons.logout, color: Colors.red),
-                title: const Text(
-                  "Đăng xuất",
-                  style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                ),
-                onTap: () async {
-                  await UserSession.logout();
-                  if (!context.mounted) return;
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    AppRoutes.login,
-                    (route) => false,
-                  );
-                },
-              ),
-            ],
-          );
-        },
+      child: Column(
+        children: [
+          UserAccountsDrawerHeader(
+            accountName: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+            accountEmail: Text(role ?? ''),
+            currentAccountPicture: const CircleAvatar(
+              backgroundColor: Colors.white,
+              child: Icon(Icons.person, size: 40, color: Color(0xFF2563EB)),
+            ),
+            decoration: const BoxDecoration(
+              color: Color(0xFF2563EB),
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: _buildMenuItems(context),
+            ),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text('Đăng xuất', style: TextStyle(color: Colors.red)),
+            onTap: () async {
+              await UserSession.logout();
+              if (mounted) Navigator.pushReplacementNamed(context, AppRoutes.login);
+            },
+          ),
+          const SizedBox(height: 20),
+        ],
       ),
+    );
+  }
+
+  List<Widget> _buildMenuItems(BuildContext context) {
+    if (role == 'ADMIN') {
+      return [
+        _menuItem(context, Icons.dashboard, 'Dashboard', AppRoutes.adminHome),
+        _sectionTitle('Quản lý tài khoản'),
+        _menuItem(context, Icons.admin_panel_settings, 'Quản trị viên', AppRoutes.adminHome),
+        _menuItem(context, Icons.school, 'Giáo viên', AppRoutes.adminHome),
+        _menuItem(context, Icons.group, 'Học viên', AppRoutes.adminHome),
+        _sectionTitle('Quản lý đào tạo'),
+        _menuItem(context, Icons.category, 'Danh mục', AppRoutes.adminHome),
+        _menuItem(context, Icons.book, 'Khóa học', AppRoutes.adminHome),
+        _menuItem(context, Icons.class_, 'Lớp học', AppRoutes.adminHome),
+        _sectionTitle('Nội dung học'),
+        _menuItem(context, Icons.quiz, 'Câu hỏi & Đáp án', AppRoutes.adminHome),
+        _menuItem(context, Icons.assignment, 'Bài kiểm tra', AppRoutes.adminHome),
+        _sectionTitle('Tài chính'),
+        _menuItem(context, Icons.payments, 'Học phí & Doanh thu', AppRoutes.adminHome),
+      ];
+    } else if (role == 'GIAO_VIEN') {
+      return [
+        _menuItem(context, Icons.dashboard, 'Dashboard', AppRoutes.teacherHome),
+        _menuItem(context, Icons.class_, 'Lớp học của tôi', AppRoutes.teacherHome),
+        _menuItem(context, Icons.calendar_month, 'Lịch dạy', AppRoutes.teacherHome),
+        _menuItem(context, Icons.book, 'Bài học', AppRoutes.teacherHome),
+        _menuItem(context, Icons.assignment, 'Bài kiểm tra', AppRoutes.teacherHome),
+        _menuItem(context, Icons.groups, 'Học viên', AppRoutes.teacherHome),
+        _menuItem(context, Icons.bar_chart, 'Tiến độ học', AppRoutes.teacherHome),
+        _menuItem(context, Icons.person, 'Hồ sơ', AppRoutes.profile),
+      ];
+    } else {
+      return [
+        _menuItem(context, Icons.home, 'Trang chủ', AppRoutes.studentHome),
+        _menuItem(context, Icons.book, 'Khóa học', AppRoutes.studentHome),
+        _menuItem(context, Icons.assignment_turned_in, 'Kiểm tra', AppRoutes.progress),
+        _menuItem(context, Icons.calendar_month, 'Lịch học', AppRoutes.schedule),
+        _menuItem(context, Icons.notifications, 'Thông báo', AppRoutes.studentHome),
+        _menuItem(context, Icons.person, 'Cá nhân', AppRoutes.profile),
+      ];
+    }
+  }
+
+  Widget _sectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+    );
+  }
+
+  Widget _menuItem(BuildContext context, IconData icon, String title, String route) {
+    return ListTile(
+      leading: Icon(icon, color: const Color(0xFF1E293B)),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+      onTap: () => Navigator.pushReplacementNamed(context, route),
     );
   }
 }

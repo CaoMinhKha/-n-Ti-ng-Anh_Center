@@ -1,207 +1,195 @@
 import 'package:flutter/material.dart';
-import '../../duong_dan/duong_dan.dart';
+import '../../dich_vu/dich_vu_bao_cao.dart';
+import '../../tien_ich/phien_lam_viec_nguoi_dung.dart';
 
-class LearningProgressScreen extends StatelessWidget {
+class LearningProgressScreen extends StatefulWidget {
   const LearningProgressScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final progressItems = [
-      {
-        'title': 'Khóa tiếng Anh giao tiếp',
-        'subtitle': 'Tập trung kỹ năng nói và phản xạ',
-        'progress': 0.72,
-        'color': Colors.blue,
-      },
-      {
-        'title': 'Ngữ pháp cơ bản',
-        'subtitle': 'Củng cố cấu trúc câu và thì cơ bản',
-        'progress': 0.45,
-        'color': Colors.deepPurple,
-      },
-      {
-        'title': 'Từ vựng nâng cao',
-        'subtitle': 'Mở rộng từ vựng theo chủ đề',
-        'progress': 0.35,
-        'color': Colors.green,
-      },
-    ];
+  State<LearningProgressScreen> createState() => _LearningProgressScreenState();
+}
 
-    final summaryItems = [
-      {'label': 'Bài học hoàn thành', 'value': '12/20'},
-      {'label': 'Bài kiểm tra đã làm', 'value': '5/8'},
-      {'label': 'Điểm trung bình', 'value': '8.5/10'},
-    ];
+class _LearningProgressScreenState extends State<LearningProgressScreen> {
+  bool _isLoading = true;
+  Map<String, dynamic> _progressData = {};
+  List<dynamic> _examResults = [];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tiến độ học tập'),
-        backgroundColor: Colors.blue.shade700,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF3D5AFE), Color(0xFF5C6BC0)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 18,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Tiến độ học tập', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  const Text('Theo dõi tiến trình và quay lại bài tập để cải thiện.', style: TextStyle(color: Colors.white70)),
-                  const SizedBox(height: 20),
-                  LinearProgressIndicator(value: 0.52, color: Colors.white, backgroundColor: Colors.white24, minHeight: 10),
-                  const SizedBox(height: 12),
-                  const Text('52% hoàn thành', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text('Khóa học đang theo dõi', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            Column(
-              children: progressItems.map((item) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _progressCard(
-                    item['title'] as String,
-                    item['subtitle'] as String,
-                    item['progress'] as double,
-                    item['color'] as Color,
-                    onTap: () => Navigator.pushNamed(context, AppRoutes.lessonDragMatch),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 24),
-            const Text('Tổng quan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  children: summaryItems.map((item) {
-                    return Column(
-                      children: [
-                        _SummaryRow(label: item['label'] as String, value: item['value'] as String),
-                        if (item != summaryItems.last) const Divider(),
-                      ],
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              color: Colors.blue.shade50,
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text('Mẹo học tốt', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    SizedBox(height: 10),
-                    Text(
-                      '• Hoàn thành ít nhất 1 bài học mỗi ngày để duy trì phản xạ.\n'
-                      '• Làm lại bài kiểm tra khi chưa đạt 80%.\n'
-                      '• Duy trì lịch học 20 phút mỗi ngày.',
-                      style: TextStyle(height: 1.5),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  @override
+  void initState() {
+    super.initState();
+    _loadProgress();
   }
 
-  Widget _progressCard(String title, String subtitle, double progress, Color color, {required VoidCallback onTap}) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      elevation: 4,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(18),
+  Future<void> _loadProgress() async {
+    setState(() => _isLoading = true);
+    try {
+      final stats = await ReportService.getStudentDashboard();
+      final results = await ReportService.getStudentResults();
+      setState(() {
+        _progressData = stats;
+        _examResults = results;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Lỗi tải tiến độ: $e');
+      setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FE),
+      appBar: AppBar(
+        title: const Text('TIẾN ĐỘ HỌC TẬP', style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+      ),
+      body: RefreshIndicator(
+        onRefresh: _loadProgress,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 10,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: color,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 6),
-                        Text(subtitle, style: const TextStyle(color: Colors.black54)),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.arrow_forward_ios, size: 18, color: Colors.black45),
-                ],
-              ),
-              const SizedBox(height: 16),
-              LinearProgressIndicator(value: progress, color: color, backgroundColor: color.withAlpha(40), minHeight: 10),
-              const SizedBox(height: 10),
-              Text('${(progress * 100).round()}% hoàn thành', style: const TextStyle(color: Colors.black54)),
+              _buildOverallProgressCard(),
+              const SizedBox(height: 30),
+              const Text('Phân tích kỹ năng', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 15),
+              _buildSkillStats(),
+              const SizedBox(height: 30),
+              const Text('Lịch sử bài kiểm tra', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 15),
+              _buildExamHistory(),
             ],
           ),
         ),
       ),
     );
   }
-}
 
-class _SummaryRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _SummaryRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildOverallProgressCard() {
+    double percent = (_progressData['overallProgress'] ?? 0) / 100.0;
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(colors: [Color(0xFF6A11CB), Color(0xFF2575FC)]),
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Column(
         children: [
-          Text(label, style: const TextStyle(fontSize: 16)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const Text('TIẾN ĐỘ TỔNG QUAN', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 12)),
+          const SizedBox(height: 20),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(
+                width: 120, height: 120,
+                child: CircularProgressIndicator(
+                  value: percent,
+                  strokeWidth: 12,
+                  backgroundColor: Colors.white12,
+                  valueColor: const AlwaysStoppedAnimation(Colors.white),
+                ),
+              ),
+              Text('${(percent * 100).toInt()}%', style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _miniStat('Hoàn thành', '${_progressData['completedLessons'] ?? 0} bài'),
+              _miniStat('Điểm TB', '${_progressData['avgScore'] ?? 0.0}'),
+            ],
+          )
         ],
       ),
+    );
+  }
+
+  Widget _miniStat(String label, String val) {
+    return Column(
+      children: [
+        Text(val, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+        Text(label, style: const TextStyle(color: Colors.white60, fontSize: 11)),
+      ],
+    );
+  }
+
+  Widget _buildSkillStats() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
+      child: Column(
+        children: [
+          _skillBar('Listening', 0.8, Colors.purple),
+          _skillBar('Speaking', 0.6, Colors.red),
+          _skillBar('Reading', 0.9, Colors.orange),
+          _skillBar('Writing', 0.5, Colors.green),
+        ],
+      ),
+    );
+  }
+
+  Widget _skillBar(String label, double val, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              Text('${(val * 100).toInt()}%', style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(value: val, backgroundColor: color.withOpacity(0.1), valueColor: AlwaysStoppedAnimation(color), minHeight: 8),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExamHistory() {
+    if (_examResults.isEmpty) return const Center(child: Text('Chưa có dữ liệu bài kiểm tra.'));
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _examResults.length,
+      itemBuilder: (context, index) {
+        final item = _examResults[index];
+        double score = double.tryParse(item['diem'].toString()) ?? 0.0;
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.shade100)),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: score >= 5 ? Colors.green.shade50 : Colors.red.shade50,
+                child: Text(score.toStringAsFixed(1), style: TextStyle(color: score >= 5 ? Colors.green : Colors.red, fontWeight: FontWeight.bold, fontSize: 14)),
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(item['tenBaiKiemTra'] ?? 'Bài kiểm tra', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text('Ngày làm: ${item['ngayNop']?.toString().substring(0, 10) ?? ''}', style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: Colors.grey),
+            ],
+          ),
+        );
+      },
     );
   }
 }

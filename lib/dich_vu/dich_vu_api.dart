@@ -1,113 +1,55 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../tien_ich/hang_so_api.dart';
+import '../tien_ich/api_client.dart';
+import '../tien_ich/phien_lam_viec_nguoi_dung.dart';
 
 class ApiService {
-
-  static String get baseUrl => ApiConstants.baseUrl;
-
-  // Lấy danh sách khóa học
-  static Future<List<dynamic>> getCourses() async {
-
-    final response = await http.get(
-      Uri.parse(
-        "$baseUrl/get_courses.php",
-      ),
-    );
-
-    if (response.statusCode == 200) {
-
-      return jsonDecode(
-        response.body,
-      );
+  // Đăng nhập chuẩn Swagger Node.js
+  static Future<Map<String, dynamic>> login(String email, String password) async {
+    final response = await ApiClient.postJson('/auth/login', {
+      'email': email,
+      'password': password,
+    });
+    
+    if (response['status'] == true && response['accessToken'] != null) {
+      await UserSession.saveToken(response['accessToken']);
+      final user = response['user'];
+      if (user != null) {
+        await UserSession.saveUserName(user['hoVaTen'] ?? '');
+        await UserSession.saveUserRole(user['vaiTro'] ?? 'HOC_VIEN');
+        await UserSession.saveUserId(int.parse(user['id'].toString()));
+      }
     }
-
-    return [];
+    return response;
   }
 
-  // Đăng nhập
-  static Future<Map<String, dynamic>>
-  login(
-      String username,
-      String password,
-      ) async {
-
-    final response = await http.post(
-
-      Uri.parse(
-        "$baseUrl/login.php",
-      ),
-
-      body: {
-        "username": username,
-        "password": password,
-      },
-    );
-
-    return jsonDecode(
-      response.body,
-    );
-  }
-
-  // Đăng ký
-  static Future<Map<String, dynamic>>
-  register({
-    required String hoTen,
+  // Đăng ký tài khoản học viên mới
+  static Future<Map<String, dynamic>> register({
+    required String hoVaTen,
     required String email,
-    required String username,
     required String password,
+    required String ngaySinh,
+    required String gioiTinh,
   }) async {
-
-    final response = await http.post(
-
-      Uri.parse(
-        "$baseUrl/register.php",
-      ),
-
-      body: {
-
-        "HoTen": hoTen,
-
-        "Email": email,
-
-        "TenDangNhap":
-        username,
-
-        "MatKhau":
-        password,
-      },
-    );
-
-    return jsonDecode(
-      response.body,
-    );
+    return await ApiClient.postJson('/auth/register', {
+      'hoVaTen': hoVaTen,
+      'email': email,
+      'password': password,
+      'ngaySinh': ngaySinh,
+      'gioiTinh': gioiTinh,
+    });
   }
 
-  // Đăng ký khóa học
-  static Future<Map<String, dynamic>>
-  registerCourse({
-    required int maHocVien,
-    required int maKhoaHoc,
-  }) async {
+  // Lấy dữ liệu Dashboard tổng quát (Dành cho Admin)
+  static Future<Map<String, dynamic>> getAdminStats() async {
+    return await ApiClient.getJson('/reports/admin/dashboard');
+  }
 
-    final response = await http.post(
+  // Lấy dữ liệu Dashboard Giáo viên
+  static Future<Map<String, dynamic>> getTeacherStats() async {
+    return await ApiClient.getJson('/reports/teacher/dashboard');
+  }
 
-      Uri.parse(
-        "$baseUrl/register_course.php",
-      ),
-
-      body: {
-
-        "MaHocVien":
-        maHocVien.toString(),
-
-        "MaKhoaHoc":
-        maKhoaHoc.toString(),
-      },
-    );
-
-    return jsonDecode(
-      response.body,
-    );
+  // Lấy dữ liệu Dashboard Học viên
+  static Future<Map<String, dynamic>> getStudentStats() async {
+    return await ApiClient.getJson('/reports/student/dashboard');
   }
 }

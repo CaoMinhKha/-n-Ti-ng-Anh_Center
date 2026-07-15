@@ -1,47 +1,42 @@
-﻿import 'dart:developer' as developer;
-import 'api_client.dart';
-import 'api_response_helper.dart';
+﻿import '../tien_ich/api_client.dart';
 
 class CourseService {
-  // Fallback sample courses used when backend returns empty or fails.
-  static List<dynamic> buildFallbackCourses() {
-    return [
-      {
-        'MaKhoaHoc': 1,
-        'TenKhoaHoc': 'Tiếng Anh 1',
-        'TrinhDo': 'A1',
-        'MoTa': 'Tiếng Anh cơ bản cho người mới bắt đầu.',
-      },
-      {
-        'MaKhoaHoc': 2,
-        'TenKhoaHoc': 'Tiếng Anh 2',
-        'TrinhDo': 'A2',
-        'MoTa': 'Tiếng Anh trình độ trung cấp, nâng cao giao tiếp.',
-      },
-      {
-        'MaKhoaHoc': 3,
-        'TenKhoaHoc': 'Tiếng Anh 3',
-        'TrinhDo': 'A3',
-        'MoTa': 'Tiếng Anh nâng cao cấp độ A2-B1.',
-      },
-      {
-        'MaKhoaHoc': 4,
-        'TenKhoaHoc': 'Luyện thi 2/6',
-        'TrinhDo': '2/6',
-        'MoTa': 'Luyện thi tiếng Anh chuyên sâu theo định hướng 2/6.',
-      },
-    ];
+  // Lấy danh sách khóa học: GET /api/khoahoc
+  static Future<List<dynamic>> getCourses() async {
+    final res = await ApiClient.getJson('/khoahoc');
+    return res['status'] == true ? res['data'] : [];
   }
 
-  static Future<List<dynamic>> getCourses({String? token}) async {
-    try {
-      final json = await ApiClient.getJson('khoahoc', token: token);
-      final data = parseListResponse(json);
-      if (data.isNotEmpty) return data;
-      return buildFallbackCourses();
-    } catch (e) {
-      developer.log('CourseService error: $e', name: 'CourseService');
-      return buildFallbackCourses();
-    }
+  // Xem chi tiết khóa học: GET /api/khoahoc/{id}
+  static Future<Map<String, dynamic>> getCourseDetail(int id) async {
+    return await ApiClient.getJson('/khoahoc/$id');
+  }
+
+  // Lấy danh sách bài học của khóa học: GET /api/khoahoc/{khoaHocId}/baihoc
+  static Future<List<dynamic>> getLessons(int khoaHocId) async {
+    final res = await ApiClient.getJson('/khoahoc/$khoaHocId/baihoc');
+    return res['status'] == true ? res['data'] : [];
+  }
+}
+
+class ClassService {
+  // Lấy danh sách lớp học: GET /api/lophoc
+  static Future<List<dynamic>> getClasses() async {
+    final res = await ApiClient.getJson('/lophoc');
+    return res['status'] == true ? res['data'] : [];
+  }
+
+  // Xem danh sách đăng ký của lớp: GET /api/lophoc/{lopHocId}/dangky
+  static Future<List<dynamic>> getEnrollments(int lopHocId) async {
+    final res = await ApiClient.getJson('/lophoc/$lopHocId/dangky');
+    return res['status'] == true ? res['data'] : [];
+  }
+
+  // Đăng ký vào lớp học: POST /api/lophoc/{lopHocId}/dangky
+  static Future<Map<String, dynamic>> enrollInClass(int lopHocId, int hocVienId, double hocPhi) async {
+    return await ApiClient.postJson('/lophoc/$lopHocId/dangky', {
+      'HocVienID': hocVienId,
+      'HocPhi': hocPhi,
+    });
   }
 }

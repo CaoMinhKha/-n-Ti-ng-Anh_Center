@@ -1,41 +1,47 @@
-﻿import 'dart:developer' as developer;
-import '../tien_ich/phien_lam_viec_nguoi_dung.dart';
-import 'api_client.dart';
+﻿import '../tien_ich/api_client.dart';
 
 class LessonService {
-  static Future<List<dynamic>> getLessons({String? slug, bool includeFull = false, int? id}) async {
+  static Future<List<dynamic>> getLessonsByCourse(int courseId) async {
     try {
-      final token = await UserSession.getToken();
-      final queryParams = <String, String>{};
-      if (slug != null && slug.isNotEmpty) {
-        queryParams['slug'] = slug;
-      }
-      if (includeFull) {
-        queryParams['include'] = 'full';
-      }
-      if (id != null) {
-        queryParams['id'] = id.toString();
-      }
-
-      final json = await ApiClient.getJson(
-        'baihoc',
-        token: token,
-        queryParams: queryParams.isEmpty ? null : queryParams,
-      );
-
-      if (json['status'] == true) {
-        final data = json['data'];
-        if (data is List) {
-          return List<dynamic>.from(data);
-        }
-        if (data != null) {
-          return [data];
-        }
+      final response = await ApiClient.getJson('lessons?courseId=$courseId');
+      if (response['status'] == true && response['data'] != null) {
+        return response['data'];
       }
     } catch (e) {
-      developer.log('LessonService error: $e', name: 'LessonService');
+      print('Lỗi lấy danh sách bài học: $e');
     }
     return [];
   }
-}
 
+  static Future<List<dynamic>> getQuestionsByLesson(int lessonId) async {
+    try {
+      final response = await ApiClient.getJson('questions?lessonId=$lessonId');
+      if (response['status'] == true && response['data'] != null) {
+        return response['data'];
+      }
+    } catch (e) {
+      print('Lỗi lấy câu hỏi bài học: $e');
+    }
+    return [];
+  }
+
+  static Future<List<dynamic>> getStudentProgress(int studentId) async {
+    try {
+      final response = await ApiClient.getJson('progress?studentId=$studentId');
+      if (response['status'] == true && response['data'] != null) {
+        return response['data'];
+      }
+    } catch (e) {
+      print('Lỗi lấy tiến độ học tập: $e');
+    }
+    return [];
+  }
+
+  static Future<Map<String, dynamic>> updateProgress(int studentId, int lessonId, double percentage) async {
+    return await ApiClient.postJson('update-progress', {
+      'MaHocVien': studentId,
+      'MaBaiHoc': lessonId,
+      'PhanTramHoanThanh': percentage,
+    });
+  }
+}
